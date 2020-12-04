@@ -16,7 +16,7 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    nicknames = message.text.strip().lower().replace('@', '').replace(' ', '').split(' ')
+    nicknames = message.text.strip().lower().replace('@', '').split(' ')
     texts = []
     alone = True
     if len(nicknames) > 1:
