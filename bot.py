@@ -36,7 +36,7 @@ async def echo(message: types.Message):
             location = get_info['location']
             if location is None:
                 location = 'Не в кампусе'
-            if get_info['staff?'] and location is None:
+            if get_info['staff?'] and location == 'Не в кампусе':
                 location = 'Спроси в АДМ'
             text = f'<b>{displayname}</b> aka {login}\n{cursus_info}\n<b>Кампус:</b> {campus}\n<b>Место:</b> {location}'
             if alone:
