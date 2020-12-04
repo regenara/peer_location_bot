@@ -4,3 +4,5 @@ stalking.py
 .DS_Store
 .idea
 __pycache__
+stalking.json
+stalking.service

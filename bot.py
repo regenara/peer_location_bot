@@ -10,7 +10,7 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    await message.reply('Привет! Пришли мне ник пользователя и я скажу где он сидит')
+    await message.answer('Привет! Пришли мне ник пользователя и я скажу где он сидит')
 
 
 @dp.message_handler()
