@@ -11,12 +11,12 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     await message.answer('Привет! Пришли мне ник пользователя и я скажу где он сидит. Можно прислать сразу несколько '
-                         'ников через запятую (не более 5)')
+                         'ников через пробел (не более 5)')
 
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    nicknames = message.text.strip().lower().replace('@', '').replace(' ', '').split(',')
+    nicknames = message.text.strip().lower().replace('@', '').replace(' ', '').split(' ')
     texts = []
     alone = True
     if len(nicknames) > 1:
