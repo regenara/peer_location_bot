@@ -26,9 +26,11 @@ async def echo(message: types.Message):
         cursus_info = '\n'.join([f'<b>{c["cursus"]["name"]}:</b> {round(c["level"], 2)}' for c in cursus_users])
         campus = get_info['campus'][0]['name']
         image_url = get_info['image_url']
-        location = get_info['location'] if not get_info['staff?'] else 'Спроси в АДМ'
+        location = get_info['location']
         if location is None:
             location = 'Не в кампусе'
+        if get_info['staff'] and location is None:
+            location = 'Спроси в АДМ'
         text = f'<b>{displayname}</b> aka {login}\n{cursus_info}\n<b>Кампус:</b> {campus}\n<b>Место:</b> {location}' \
                f'<a href="{image_url}">​</a>'
     await message.answer(text)

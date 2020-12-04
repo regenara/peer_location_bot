@@ -6,3 +6,4 @@ stalking.py
 __pycache__
 stalking.json
 stalking.service
+stalking.timer
