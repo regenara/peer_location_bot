@@ -1,6 +1,6 @@
 from aiogram import Bot, Dispatcher, executor, types
 
-import intra_auth
+from text_generator import text_compile
 from utils import read_json
 
 api_token = read_json('data.json')['api_token']
@@ -16,33 +16,8 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    nicknames = message.text.strip().lower().replace('@', '').split(' ')
-    texts = []
-    alone = True
-    if len(nicknames) > 1:
-        alone = False
-    for nickname in nicknames[:5]:
-        nickname = nickname.strip()
-        token = intra_auth.get_token()
-        get_info = intra_auth.get_user(nickname, token)
-        text = f'Пользователь <b>{nickname}</b> не найден! Проверь правильность введенных данных'
-        if get_info:
-            displayname = get_info['displayname']
-            login = get_info['login']
-            cursus_users = get_info['cursus_users']
-            cursus_info = '\n'.join([f'<b>{c["cursus"]["name"]}:</b> {round(c["level"], 2)}' for c in cursus_users])
-            campus = get_info['campus'][0]['name']
-            image_url = get_info['image_url']
-            location = get_info['location']
-            if location is None:
-                location = 'Не в кампусе'
-            if get_info['staff?'] and location == 'Не в кампусе':
-                location = 'Спроси в АДМ'
-            text = f'<b>{displayname}</b> aka {login}\n{cursus_info}\n<b>Кампус:</b> {campus}\n<b>Место:</b> {location}'
-            if alone:
-                text += f'<a href="{image_url}">​</a>'
-        texts.append(text)
-    await message.answer(f'\n➖➖➖➖➖➖➖➖➖➖\n'.join(texts))
+    text = text_compile(message.text)
+    await message.answer(text)
 
 
 if __name__ == '__main__':
