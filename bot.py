@@ -16,7 +16,7 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    text = text_compile(message.text)
+    text = text_compile(message.text, 'en', True)
     await message.answer(text)
 
 

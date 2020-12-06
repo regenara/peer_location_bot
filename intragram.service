@@ -9,6 +9,5 @@ Restart=always
 RestartSec=3
 ExecStart=/usr/bin/screen -L -dmS intragram /home/ubuntu/intragram/venv/bin/python3 /home/ubuntu/intragram/bot.py
 
-
 [Install]
 WantedBy=multi-user.target
