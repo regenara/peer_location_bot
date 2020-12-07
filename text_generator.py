@@ -1,6 +1,6 @@
 from datetime import datetime
 from pytz import timezone
-from time import mktime
+from time import mktime, gmtime
 
 import intra_requests
 from config import localization_texts
@@ -15,13 +15,14 @@ def text_compile(message_text: str, lang: str, avatar: bool) -> dict:
     users = []
     for nickname in nicknames:
         nickname_valid = nickname_check(nickname)
+        info = {}
         if nickname_valid:
             access_token = intra_requests.get_token()
             info = intra_requests.get_user(nickname, access_token)
         elif len(nickname) > 20:
             nickname = f'{nickname[:20]}...'
         text = eval(user_info_localization['not_found'])
-        if nickname_valid:
+        if info:
             intra_user_id = info['id']
             coalition = intra_requests.get_user_coalition(intra_user_id, access_token)
             displayname = info['displayname']
@@ -89,11 +90,12 @@ def get_last_locations(nickname: str, lang: str) -> str:
                   if campus['id'] == location['campus_id']][0]
         begin_at = location['begin_at'].replace('Z', '+00:00')
         begin_at_unix_time = mktime(datetime.fromisoformat(begin_at).timetuple())
-        log_in_time = datetime.fromtimestamp(begin_at_unix_time, timezone('Europe/Zurich')).strftime('%H:%M:%S %d.%m.%Y')
+        log_in_time = datetime.fromtimestamp(begin_at_unix_time, timezone(campus[1])).strftime('%H:%M:%S %d.%m.%Y')
         log_out_time = ''
         if location['end_at'] is not None:
             end_at = location['end_at'].replace('Z', '+00:00')
             end_at_unix_time = mktime(datetime.fromisoformat(end_at).timetuple())
+            print(end_at_unix_time)
             log_out_time = datetime.fromtimestamp(end_at_unix_time, timezone(campus[1])).strftime('%H:%M:%S %d.%m.%Y')
             log_out_time = f'\nLog out: {log_out_time}'
         text = f'{user_info_localization["campus"]}: {campus[0]}\n' \
