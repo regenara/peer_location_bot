@@ -1,17 +1,15 @@
 import requests
 
+import config
 from utils import read_json
-
-data = read_json('data.json')
-client_id = data['client_id']
-client_secret = data['client_secret']
 
 
 def requests_get(url: str, access_token: str) -> dict or list:
     while True:
         try:
             request = requests.get(url, params={'access_token': access_token}).json()
-        except:
+        except Exception as e:
+            print(e)
             continue
         break
     return request
@@ -19,8 +17,8 @@ def requests_get(url: str, access_token: str) -> dict or list:
 
 def get_token() -> str:
     url = 'https://api.intra.42.fr/oauth/token'
-    request = requests.post(url, params={'grant_type': 'client_credentials', 'client_id': client_id,
-                                         'client_secret': client_secret}).json()
+    request = requests.post(url, params={'grant_type': 'client_credentials', 'client_id': config.client_id,
+                                         'client_secret': config.client_secret}).json()
     access_token = request['access_token']
     return access_token
 
@@ -44,6 +42,12 @@ def get_last_locations(user_id: int, access_token: str) -> list:
     url = f'https://api.intra.42.fr/v2/users/{user_id}/locations'
     locations = requests_get(url, access_token)
     return locations
+
+
+def get_campuses(access_token: str) -> list:
+    url = 'https://api.intra.42.fr/v2/campus'
+    campuses = requests_get(url, access_token)
+    return campuses
 
 
 t = get_token()

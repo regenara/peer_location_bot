@@ -1,4 +1,11 @@
 {
+  "language": {"ru": "Привет! Выбери язык:", "en": "Hello! Choose your language:"},
+  "avatar": {"ru": "Выбран русский язык.\n\nОтображать аватар пользователя?",
+             "en": "English is selected.\n\nDisplay the user's avatar?"},
+  "yes_or_no": {"ru": {"yes": "Да", "no": "Нет"}, "en": {"yes": "Yes", "no": "No"}},
+  "saving_settings": {"ru": "Настройки сохранены.\n\n", "en": "Settings have been saved.\n\n"},
+  "help": {"ru": "<code>nickname</code> - информация о пользователе\n<code>nickname1 nickname2 nickname3</code> - информация о пользователях (не более 5)\n<code>? nickname</code> - список 30 последних локаций пользователя\n/friends - друзья\n/start - настройки\n/help - это сообщение\n/about - исходники бота",
+           "en": "<code>nickname</code> - user information\n<code>nickname1 nickname2 nickname3</code> - information about users (no more than 5)\n<code>? nickname</code> - list of the user's last 30 locations\n/friends - friends\n/start - settings\n/help - this message\n/about - bot source"},
   "user_info":
   {"ru": {"not_found": "f'Пользователь <b>{nickname}</b> не найден! Проверь правильность введенных данных'",
           "coalition": "Коалиция", "campus": "Кампус", "location": "Место", "ask_adm":  "Спроси в АДМ",
