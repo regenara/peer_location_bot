@@ -12,4 +12,3 @@ mongo_password = config['mongo_password']
 stalker_client_secret = config['stalker_client_secret']
 stalker_client_id = config['stalker_client_id']
 localization_texts = read_json(path.join('data', "localization.json"))
-

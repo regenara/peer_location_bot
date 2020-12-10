@@ -45,9 +45,9 @@ class Mongo:
 
     async def get_lang(self, user_id) -> str:
         data = await self.find_tg_user(user_id)
-        if data is None:
-            data = await self.find_tg_user(user_id)
-        lang = data['settings']['lang']
+        lang = 'en'
+        if data is not None:
+            lang = data['settings']['lang']
         return lang
 
     async def get_intra_users(self) -> AsyncIOMotorCursor:

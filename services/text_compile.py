@@ -1,3 +1,5 @@
+from asyncio import sleep
+
 from datetime import datetime
 from pytz import timezone
 from time import mktime
@@ -27,6 +29,7 @@ async def get_users_info(required_users: str or list, lang: str, avatar: bool = 
             nickname = f'{nickname[:20]}...'
         text = eval(user_info_localization['not_found'])
         if info:
+            await sleep(0.25)
             coalition = intra_requests.get_user_coalition(nickname, access_token)
             displayname = info['displayname']
             cursus_users = info['cursus_users']
@@ -41,6 +44,7 @@ async def get_users_info(required_users: str or list, lang: str, avatar: bool = 
             if info['staff?']:
                 location = user_info_localization['ask_adm']
             if location is None:
+                await sleep(0.25)
                 location = get_last_seen_time(nickname, access_token, user_info_localization)
             text = f'<b>{displayname}</b> aka {nickname}\n<b>{user_info_localization["coalition"]}:</b> ' \
                    f'{coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
@@ -49,6 +53,7 @@ async def get_users_info(required_users: str or list, lang: str, avatar: bool = 
                 text += f'<a href="{image_url}">​</a>'
             intra_users.append(nickname)
         texts.append(text)
+        await sleep(0.5)
     data = {'text': f'\n\n'.join(texts), 'intra_users': intra_users}
     return data
 
