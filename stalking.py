@@ -1,28 +1,41 @@
-"""import asyncio
+import asyncio
+from os import path
 
-import intra_requests
-from bot import bot
-from utils import read_json, write_json
+from services.utils import read_json
+from misc import bot
+from services.intra_requests import IntraRequests
+from services.mongo import Mongo
+
+config = read_json(path.join('data', 'data.json'))
+mongo_username = config['mongo_username']
+mongo_password = config['mongo_password']
+stalker_client_secret = config['stalker_client_secret']
+stalker_client_id = config['stalker_client_id']
+
+localization_texts = read_json(path.join('data', "localization.json"))
+
+intra_requests = IntraRequests(stalker_client_id, stalker_client_secret)
+mongo = Mongo(mongo_username, mongo_password)
 
 
-async def check_user():
-    users = read_json('data.json')['users']
-    token = intra_requests.get_token()
-    for user in users:
-        get_info = intra_requests.get_user(user, token)
-        location = get_info['location']
-        get_data = read_json('stalking.json')
-        data = get_data.get(user)
-        if data is None:
-            data = {'location': location}
-        if location is None:
-            get_data.update({user: {'location': None}})
-        elif location != data['location']:
-            await bot.send_message(, f'{user} в кампусе!\n{location}')
-            get_data.update({user: {'location': location}})
-        write_json(get_data, 'stalking.json')
+async def send_notifications():
+    cursor = await mongo.get_intra_users()
+    for document in await cursor.to_list(length=100):
+        nickname = document['nickname']
+        location = document['location']
+        stalkers = document['stalkers']
+        access_token = intra_requests.get_token()
+        info = intra_requests.get_user(nickname, access_token)
+        current_location = info['location']
+        if current_location != location:
+            await mongo.update_intra_user(nickname, {'$set': {'location': current_location}})
+            if current_location is not None:
+                for user_id in stalkers:
+                    lang = await mongo.get_lang(user_id)
+                    text = eval(localization_texts['in_campus'][lang])
+                    await bot.send_message(user_id, text)
 
 
 if __name__ == '__main__':
-    asyncio.run(check_user())
-"""
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(send_notifications())

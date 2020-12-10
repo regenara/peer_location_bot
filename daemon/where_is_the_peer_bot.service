@@ -1,0 +1,13 @@
+[Unit]
+Description=where_is_the_peer_bot
+After=network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/home/ubuntu/where_is_the_peer_bot
+Restart=always
+RestartSec=3
+ExecStart=/usr/bin/screen -L -dmS where_is_the_peer_bot /home/ubuntu/where_is_the_peer_bot/venv/bin/python3 /home/ubuntu/where_is_the_peer_bot/bot.py
+
+[Install]
+WantedBy=multi-user.target

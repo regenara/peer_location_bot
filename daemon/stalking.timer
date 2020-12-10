@@ -1,0 +1,9 @@
+[Unit]
+Description=stalking
+
+[Timer]
+OnUnitActiveSec=900s
+OnBootSec=900s
+
+[Install]
+WantedBy=default.target

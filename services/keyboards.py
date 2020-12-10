@@ -16,18 +16,19 @@ def avatar_keyboard(yes: str, no: str) -> InlineKeyboardMarkup:
     return language_kb
 
 
-def intra_users_keyboard(intra_users: list, friends: dict) -> InlineKeyboardMarkup:
+def intra_users_keyboard(intra_users: list, friends: list, notifications: list) -> InlineKeyboardMarkup:
     intra_users_kb = InlineKeyboardMarkup(row_width=2)
     for intra_user in intra_users:
-        is_friend = '✅'
-        notification = '🔔'
-        switch = 'on'
-        if friends.get(intra_user) is not None:
-            is_friend = '❌'
-            if friends['notification']:
-                notification = '🔕'
-                switch = 'off'
-        intra_users_kb.row(InlineKeyboardButton(f'{intra_user} {is_friend}', callback_data=intra_user),
-                           InlineKeyboardButton(f'{intra_user} {notification}', callback_data=f'{switch}={intra_user}'))
+        is_friend = '❌'
+        alert = '🔕'
+        friend = 'push'
+        switch_alert = 'on'
+        if intra_user in friends:
+            is_friend = '✅'
+            friend = 'pull'
+        if intra_user in notifications:
+            alert = '🔔'
+            switch_alert = 'off'
+        intra_users_kb.row(InlineKeyboardButton(f'{intra_user} {is_friend}', callback_data=f'{friend}={intra_user}'),
+                           InlineKeyboardButton(f'{intra_user} {alert}', callback_data=f'{switch_alert}={intra_user}'))
     return intra_users_kb
-

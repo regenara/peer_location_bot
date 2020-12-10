@@ -1,0 +1,11 @@
+[Unit]
+Description=stalking
+After=network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/home/ubuntu/where_is_the_peer_bot
+ExecStart=/usr/bin/screen -L -dmS stalking /home/ubuntu/where_is_the_peer_bot/venv/bin/python3 /home/ubuntu/where_is_the_peer_bot/stalking.py
+
+[Install]
+WantedBy=multi-user.target

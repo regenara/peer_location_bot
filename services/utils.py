@@ -13,5 +13,4 @@ def write_json(data, json_file):
 
 
 def nickname_check(nickname):
-    return 1 < len(nickname) < 20 and '.' not in nickname and '/' not in nickname and '\\' not in nickname \
-            and '#' not in nickname and '%' not in nickname and ' ' not in nickname and '\n' not in nickname
+    return 1 < len(nickname) < 20 and not any(c in './\\#% \n?!' for c in nickname)

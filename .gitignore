@@ -1,8 +1,6 @@
 venv
-data.json
+data/data.json
 .DS_Store
 .idea
 __pycache__
-stalking.json
-stalking.service
-stalking.timer
+data2.json

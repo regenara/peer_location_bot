@@ -3,10 +3,13 @@ aiohttp==3.7.3
 async-timeout==3.0.1
 attrs==20.3.0
 Babel==2.9.0
-certifi==2020.11.8
+certifi==2020.12.5
 chardet==3.0.4
+dnspython==2.0.0
 idna==2.10
+motor==2.3.0
 multidict==5.1.0
+pymongo==3.11.2
 pytz==2020.4
 requests==2.25.0
 typing-extensions==3.7.4.3

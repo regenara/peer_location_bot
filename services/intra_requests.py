@@ -7,10 +7,13 @@ class IntraRequests:
         self.client_id = client_id
         self.client_secret = client_secret
 
-    def requests_get(self, url: str, access_token: str) -> dict or list:
+    def requests_get(self, url: str, access_token: str, args: dict = None) -> dict or list:
         while True:
+            params = {'access_token': access_token}
+            if args is not None:
+                params.update(args)
             try:
-                request = requests.get(url, params={'access_token': access_token}).json()
+                request = requests.get(url, params=params).json()
                 if isinstance(request, dict) and request.get('message') == 'The access token expired':
                     access_token = self.get_token()
                     continue
@@ -31,20 +34,21 @@ class IntraRequests:
         info = self.requests_get(url, access_token)
         return info
 
-    def get_user_coalition(self, user_id: int, access_token: str) -> str:
-        url = f'https://api.intra.42.fr/v2/users/{user_id}/coalitions_users'
-        coalition_id = self.requests_get(url, access_token)[0]['coalition_id']
-        url = 'https://api.intra.42.fr/v2/coalitions'
-        get_coalitions = self.requests_get(url, access_token)
-        coalition = [c['name'] for c in get_coalitions if c['id'] == coalition_id][0]
+    def get_user_coalition(self, nickname: str, access_token: str) -> str:
+        url = f'https://api.intra.42.fr/v2/users/{nickname}/coalitions'
+        coalition = self.requests_get(url, access_token)
+        if coalition:
+            coalition = coalition[0]['name']
+        else:
+            coalition = '-'
         return coalition
 
-    def get_last_locations(self, user_id: int, access_token: str) -> list:
-        url = f'https://api.intra.42.fr/v2/users/{user_id}/locations'
+    def get_last_locations(self, nickname: str, access_token: str) -> list:
+        url = f'https://api.intra.42.fr/v2/users/{nickname}/locations'
         locations = self.requests_get(url, access_token)
         return locations
 
     def get_campuses(self, access_token: str) -> list:
         url = 'https://api.intra.42.fr/v2/campus'
-        campuses = self.requests_get(url, access_token)
+        campuses = self.requests_get(url, access_token, {'per_page': 100})
         return campuses
