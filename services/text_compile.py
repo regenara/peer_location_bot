@@ -77,6 +77,10 @@ def get_last_seen_time(nickname: str, access_token: str, user_info_localization:
         hours_gone = f'{hours}{user_info_localization["hours"]} '
     if minutes:
         minutes_gone = f'{str(minutes).zfill(2)}{user_info_localization["minutes"]} '
+    if not days and not hours and not minutes:
+        minutes_gone = user_info_localization['just_now']
+        text = eval(user_info_localization['not_on_campus'])
+        return text[:text.rindex(' ')]
     return eval(user_info_localization['not_on_campus'])
 
 
