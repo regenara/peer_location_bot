@@ -11,20 +11,21 @@ async def send_notifications():
         nickname = document['nickname']
         location = document['location']
         stalkers = document['stalkers']
-        access_token = intra_requests_stalking.get_token()
-        info = intra_requests_stalking.get_user(nickname, access_token)
-        current_location = info['location']
-        if current_location != location:
-            await mongo.update_intra_user(nickname, {'$set': {'location': current_location}})
-            if current_location is not None:
-                for user_id in stalkers:
-                    lang = await mongo.get_lang(user_id)
-                    text = eval(localization_texts['in_campus'][lang])
-                    try:
-                        await bot.send_message(user_id, text)
-                    except:
-                        pass
-                    await asyncio.sleep(0.1)
+        if stalkers:
+            access_token = intra_requests_stalking.get_token()
+            info = intra_requests_stalking.get_user(nickname, access_token)
+            current_location = info['location']
+            if current_location != location:
+                await mongo.update_intra_user(nickname, {'$set': {'location': current_location}})
+                if current_location is not None:
+                    for user_id in stalkers:
+                        lang = await mongo.get_lang(user_id)
+                        text = eval(localization_texts['in_campus'][lang])
+                        try:
+                            await bot.send_message(user_id, text)
+                        except:
+                            pass
+                        await asyncio.sleep(0.1)
 
 
 if __name__ == '__main__':
