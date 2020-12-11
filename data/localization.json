@@ -34,5 +34,6 @@
                       "en": {"push": "f'Added as a friend: {nickname}'",
                              "pull": "f'Removed from friends: {nickname}'",
                              "count": "You can't add more than 20 users as friends"}},
+  "wait": {"ru": "Один момент...", "en": "One moment..."},
   "in_campus": {"ru": "f'''<b>{nickname}</b> в кампусе!\n<b>{current_location}</b>'''", "en": "f'''<b>{nickname}</b> is on campus!\n<b>{current_location}</b>'''"}
 }

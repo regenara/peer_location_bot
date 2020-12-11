@@ -40,7 +40,7 @@ class IntraRequests:
         if coalition:
             coalition = coalition[0]['name']
         else:
-            coalition = '-'
+            coalition = '—'
         return coalition
 
     def get_last_locations(self, nickname: str, access_token: str) -> list:

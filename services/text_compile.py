@@ -8,49 +8,38 @@ from misc import mongo
 from services.utils import nickname_check
 
 
-async def get_users_info(required_users: str or list, lang: str, avatar: bool = False) -> dict:
-    if isinstance(required_users, list):
-        nicknames = required_users
-    else:
-        get_nicknames = required_users.lower().split()
-        nicknames = list(dict.fromkeys(get_nicknames))[:5]
+async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple:
     user_info_localization = localization_texts['user_info'][lang]
-    texts = []
-    intra_users = []
-    for nickname in nicknames:
-        nickname_valid = nickname_check(nickname)
-        info = {}
-        if nickname_valid:
-            access_token = intra_requests.get_token()
-            info = intra_requests.get_user(nickname, access_token)
-        elif len(nickname) > 20:
-            nickname = f'{nickname[:20]}...'
-        text = eval(user_info_localization['not_found'])
-        if info:
-            coalition = intra_requests.get_user_coalition(nickname, access_token)
-            displayname = info['displayname']
-            cursus_users = info['cursus_users']
-            cursus_info = '\n'.join([f'<b>{c["cursus"]["name"]}:</b> {round(c["level"], 2)}' for c in cursus_users])
-            primary_campus_id = [campus['campus_id'] for campus in info['campus_users'] if campus['is_primary']][0]
-            campus = [campus['name'] for campus in info['campus'] if campus['id'] == primary_campus_id][0]
-            image_url = ''
-            if len(nicknames) < 2:
-                image_url = info['image_url']
-            location = info['location']
-            await mongo.find_intra_user(nickname, location)
-            if info['staff?']:
-                location = user_info_localization['ask_adm']
-            if location is None:
-                location = get_last_seen_time(nickname, access_token, user_info_localization)
-            text = f'<b>{displayname}</b> aka {nickname}\n<b>{user_info_localization["coalition"]}:</b> ' \
-                   f'{coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
-                   f'{user_info_localization["location"]}:</b> {location}'
-            if avatar and image_url:
-                text += f'<a href="{image_url}">​</a>'
-            intra_users.append(nickname)
-        texts.append(text)
-    data = {'text': f'\n\n'.join(texts), 'intra_users': intra_users}
-    return data
+    nickname_valid = nickname_check(nickname)
+    info = {}
+    if nickname_valid:
+        access_token = intra_requests.get_token()
+        info = intra_requests.get_user(nickname, access_token)
+    elif len(nickname) > 20:
+        nickname = f'{nickname[:20]}...'
+    text = eval(user_info_localization['not_found'])
+    login = ''
+    if info:
+        coalition = intra_requests.get_user_coalition(nickname, access_token)
+        displayname = info['displayname']
+        login = info['login']
+        cursus_users = info['cursus_users']
+        cursus_info = '\n'.join([f'<b>{c["cursus"]["name"]}:</b> {round(c["level"], 2)}' for c in cursus_users])
+        primary_campus_id = [campus['campus_id'] for campus in info['campus_users'] if campus['is_primary']][0]
+        campus = [campus['name'] for campus in info['campus'] if campus['id'] == primary_campus_id][0]
+        image_url = info['image_url']
+        location = info['location']
+        await mongo.find_intra_user(nickname, location)
+        if info['staff?']:
+            location = user_info_localization['ask_adm']
+        if location is None:
+            location = get_last_seen_time(nickname, access_token, user_info_localization)
+        text = f'<b>{displayname}</b> aka {nickname}\n<b>{user_info_localization["coalition"]}:</b> ' \
+               f'{coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
+               f'{user_info_localization["location"]}:</b> {location}'
+        if avatar and is_alone:
+            text += f'<a href="{image_url}">​</a>'
+    return text, login
 
 
 def get_last_seen_time(nickname: str, access_token: str, user_info_localization: dict) -> str:
