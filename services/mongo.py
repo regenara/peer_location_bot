@@ -1,3 +1,5 @@
+import asyncio
+
 from motor.motor_asyncio import AsyncIOMotorClient
 from motor.motor_asyncio import AsyncIOMotorCursor
 
@@ -22,6 +24,7 @@ class Mongo:
         data = await self.tg_users.find_one({'user_id': user_id})
         if data is None:
             await self.tg_db_fill(user_id)
+            await asyncio.sleep(1)
             data = await self.tg_users.find_one({'user_id': user_id})
         return data
 
@@ -29,6 +32,7 @@ class Mongo:
         data = await self.intra_users.find_one({'nickname': nickname})
         if data is None:
             await self.intra_db_fill(nickname, location)
+            await asyncio.sleep(1)
             data = await self.intra_users.find_one({'nickname': nickname})
         return data
 
@@ -45,9 +49,7 @@ class Mongo:
 
     async def get_lang(self, user_id) -> str:
         data = await self.find_tg_user(user_id)
-        lang = 'en'
-        if data is not None:
-            lang = data['settings']['lang']
+        lang = data['settings']['lang']
         return lang
 
     async def get_intra_users(self) -> AsyncIOMotorCursor:
