@@ -1,7 +1,7 @@
 import asyncio
 from data.config import localization_texts
 from misc import bot
-from misc import intra_requests_stalking
+from misc import intra_requests
 from misc import mongo
 
 
@@ -12,8 +12,8 @@ async def send_notifications():
         location = document['location']
         stalkers = document['stalkers']
         if stalkers:
-            access_token = intra_requests_stalking.get_token()
-            info = intra_requests_stalking.get_user(nickname, access_token)
+            access_token = intra_requests.get_token()
+            info = intra_requests.get_user(nickname, access_token)
             current_location = info['location']
             if current_location != location:
                 await mongo.update_intra_user(nickname, {'$set': {'location': current_location}})

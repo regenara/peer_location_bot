@@ -1,8 +1,6 @@
 {
     "client_id": "",
     "client_secret": "",
-    "stalker_client_id": "",
-    "stalker_client_secret": "",
     "api_token": "",
     "mongo_username": "",
     "mongo_password": ""
