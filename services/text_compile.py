@@ -82,7 +82,6 @@ def get_last_locations(nickname: str, lang: str) -> str:
         return eval(user_info_localization['not_found'])
     access_token = intra_requests.get_token()
     last_locations = intra_requests.get_last_locations(nickname, access_token)
-    head = f'<b>{nickname}</b>\n'
     if isinstance(last_locations, list) and last_locations:
         campuses = intra_requests.get_campuses(access_token)
         texts = [f'<i>{local_time}</i>']
@@ -105,7 +104,7 @@ def get_last_locations(nickname: str, lang: str) -> str:
         texts = [last_location_localization[lang]['not_logged']]
     else:
         return eval(user_info_localization['not_found'])
-    return f'{head}\n' + f'\n'.join(texts)
+    return f'<b>{nickname}</b>\n' + f'\n'.join(texts)
 
 
 def friends_list_normalization(message_text: str, friends: list, lang: str) -> str:
