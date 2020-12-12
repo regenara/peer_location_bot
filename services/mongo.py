@@ -32,7 +32,6 @@ class Mongo:
         data = await self.intra_users.find_one({'nickname': nickname})
         if data is None:
             await self.intra_db_fill(nickname, location)
-            await asyncio.sleep(1)
             data = await self.intra_users.find_one({'nickname': nickname})
         return data
 
