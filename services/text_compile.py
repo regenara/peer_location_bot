@@ -34,7 +34,7 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
             location = user_info_localization['ask_adm']
         if location is None:
             location = get_last_seen_time(nickname, access_token, user_info_localization)
-        text = f'<b>{displayname}</b> aka {nickname}\n<b>{user_info_localization["coalition"]}:</b> ' \
+        text = f'<b>{displayname}</b> aka <code>{nickname}</code>\n<b>{user_info_localization["coalition"]}:</b> ' \
                f'{coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
                f'{user_info_localization["location"]}:</b> {location}'
         if avatar and is_alone:
@@ -116,7 +116,8 @@ def friends_list_normalization(message_text: str, friends: list, lang: str) -> s
         normal_strings = []
         for i, string in enumerate(strings):
             if not i:
-                normal_strings.append(f'<b>{string[:string.index("aka")]}</b>{string[string.index("aka"):]}')
+                normal_strings.append(f'<b>{string[:string.index("aka")]}</b>'
+                                      f'aka <code>{string[string.index("aka") + 4:]}</code>')
             else:
                 normal_strings.append(f'<b>{string[:string.index(":") + 1]}</b>{string[string.index(":") + 1:]}')
         new_friends_info.append('\n'.join(normal_strings))
