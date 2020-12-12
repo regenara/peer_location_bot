@@ -116,7 +116,7 @@ def friends_list_normalization(message_text: str, friends: list, lang: str) -> s
         strings = info.splitlines()
         normal_strings = []
         for i, string in enumerate(strings):
-            if i == 0:
+            if not i:
                 normal_strings.append(f'<b>{string[:string.index("aka")]}</b>{string[string.index("aka"):]}')
             else:
                 normal_strings.append(f'<b>{string[:string.index(":") + 1]}</b>{string[string.index(":") + 1:]}')
