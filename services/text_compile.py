@@ -11,6 +11,7 @@ from services.utils import nickname_check
 async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple:
     user_info_localization = localization_texts['user_info'][lang]
     nickname_valid = nickname_check(nickname)
+    nickname = nickname.replace('@', '')
     info = {}
     if nickname_valid:
         access_token = intra_requests.get_token()
