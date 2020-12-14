@@ -30,13 +30,16 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         campus = [campus['name'] for campus in info['campus'] if campus['id'] == primary_campus_id][0]
         image_url = info['image_url']
         location = info['location']
+        status = '🟢 '
         await mongo.find_intra_user(nickname, location)
         if info['staff?']:
             location = user_info_localization['ask_adm']
+            status = ''
         if location is None:
             location = get_last_seen_time(nickname, access_token, user_info_localization)
-        text = f'<b>{displayname}</b> aka <code>{nickname}</code>\n<b>{user_info_localization["coalition"]}:</b> ' \
-               f'{coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
+            status = '🔴 '
+        text = f'{status}<b>{displayname}</b> aka <code>{nickname}</code>\n<b>{user_info_localization["coalition"]}:' \
+               f'</b> {coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
                f'{user_info_localization["location"]}:</b> {location}'
         if avatar and is_alone:
             text += f'<a href="{image_url}">​</a>'
@@ -83,10 +86,11 @@ def get_last_locations(nickname: str, lang: str) -> str:
         return eval(user_info_localization['not_found'])
     access_token = intra_requests.get_token()
     last_locations = intra_requests.get_last_locations(nickname, access_token)
+    status = '🔴 '
     if isinstance(last_locations, list) and last_locations:
         campuses = intra_requests.get_campuses(access_token)
         texts = [f'<i>{local_time}</i>']
-        for location in last_locations:
+        for i, location in enumerate(last_locations):
             campus = [(campus['name'], campus['time_zone']) for campus in campuses
                       if campus['id'] == location['campus_id']][0]
             begin_at = location['begin_at'].replace('Z', '+00:00')
@@ -96,6 +100,8 @@ def get_last_locations(nickname: str, lang: str) -> str:
             if location['end_at'] is not None:
                 end_at = location['end_at'].replace('Z', '+00:00')
                 log_out_time = datetime.fromisoformat(end_at).astimezone(timezone(campus[1])).strftime(time_format)
+            if not i and location['end_at'] is None:
+                status = '🟢 '
             log_time = f'{log_in_time} - {log_out_time}'
             if log_in_time[7:] == log_out_time[7:]:
                 log_time = f'{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
@@ -105,7 +111,7 @@ def get_last_locations(nickname: str, lang: str) -> str:
         texts = [last_location_localization[lang]['not_logged']]
     else:
         return eval(user_info_localization['not_found'])
-    return f'<b>{nickname}</b>\n' + f'\n'.join(texts)
+    return f'{status}<b>{nickname}</b>\n' + f'\n'.join(texts)
 
 
 def friends_list_normalization(message_text: str, friends: list, lang: str) -> str:

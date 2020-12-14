@@ -3,4 +3,4 @@ data/data.json
 .DS_Store
 .idea
 __pycache__
-data2.json
+data/data2.json
