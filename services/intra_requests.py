@@ -36,9 +36,12 @@ class IntraRequests:
 
     def get_user_coalition(self, nickname: str, access_token: str) -> str:
         url = f'https://api.intra.42.fr/v2/users/{nickname}/coalitions'
-        coalition = self.requests_get(url, access_token)
-        if coalition:
-            coalition = coalition[0]['name']
+        coalitions = self.requests_get(url, access_token)
+        if coalitions:
+            url = f'https://api.intra.42.fr/v2/users/{nickname}/coalitions_users'
+            coalitions_users = self.requests_get(url, access_token)
+            coalition_id = coalitions_users[0]['coalition_id']
+            coalition = [coalition['name'] for coalition in coalitions if coalition['id'] == coalition_id][0]
         else:
             coalition = '—'
         return coalition
