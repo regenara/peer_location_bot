@@ -42,11 +42,11 @@ async def switch_notification(callback_query: CallbackQuery):
     switch, nickname = callback_query.data.split('=')
     action = 'pull'
     if switch == 'on':
-        action = 'push'
+        action = 'addToSet'
     buttons = callback_query.message.reply_markup.inline_keyboard
     count = await mongo.get_count(user_id, 'notifications')
     lang = await mongo.get_lang(user_id)
-    if action == 'push' and count == 10:
+    if action == 'addToSet' and count == 10:
         alert_text = localization_texts['notifications'][lang]['count']
         await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
     else:
@@ -83,7 +83,7 @@ async def friends_list(callback_query: CallbackQuery):
     await bot.edit_message_text(text, user_id, message_id, reply_markup=keyboard)
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('push', 'pull'))
+@dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('addToSet', 'pull'))
 async def friends_actions(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     message_id = callback_query.message.message_id
@@ -91,7 +91,7 @@ async def friends_actions(callback_query: CallbackQuery):
     buttons = callback_query.message.reply_markup.inline_keyboard
     count = await mongo.get_count(user_id, 'friends')
     lang = await mongo.get_lang(user_id)
-    if action == 'push' and count == 20:
+    if action == 'addToSet' and count == 20:
         alert_text = localization_texts['friends_actions'][lang]['count']
         await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
     else:

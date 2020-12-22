@@ -21,7 +21,7 @@ def intra_users_keyboard(intra_users: list, friends: list, notifications: list) 
     for intra_user in intra_users:
         is_friend = '❌'
         alert = '🔕'
-        friend = 'push'
+        friend = 'addToSet'
         switch_alert = 'on'
         if intra_user in friends:
             is_friend = '✅'
