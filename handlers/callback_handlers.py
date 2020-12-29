@@ -51,7 +51,7 @@ async def switch_notification(callback_query: CallbackQuery):
         try:
             alert_text = localization_texts['notifications'][lang]['count']
         except KeyError as e:
-            print(user_id, time(), nickname, switch, e)
+            print(user_id, time(), nickname, switch, e, localization_texts['notifications'][lang])
             alert_text = 'NULL'
         await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
     else:
