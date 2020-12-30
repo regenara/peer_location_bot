@@ -22,6 +22,13 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
     login = ''
     if info:
         coalition = intra_requests.get_user_coalition(nickname, access_token)
+        months = {'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
+                  'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'}
+        pool_month = info.get('pool_month')
+        pool_year = info.get('pool_year')
+        pool_info = ''
+        if pool_month is not None and pool_year is not None and months.get(pool_month) is not None:
+            pool_info = f'\n<b>{user_info_localization["piscine"]}:</b> {months[pool_month]}.{pool_year}'
         displayname = info['displayname']
         login = info['login']
         cursus_users = info['cursus_users']
@@ -38,9 +45,10 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         if location is None:
             location = get_last_seen_time(nickname, access_token, user_info_localization)
             status = '🔴 '
-        text = f'{status}<b>{displayname}</b> aka <code>{nickname}</code>\n<b>{user_info_localization["coalition"]}:' \
-               f'</b> {coalition}\n{cursus_info}\n<b>{user_info_localization["campus"]}:</b> {campus}\n<b>' \
-               f'{user_info_localization["location"]}:</b> {location}'
+        text = f'{status}<b>{displayname}</b> aka <code>{nickname}</code>{pool_info}\n' \
+               f'<b>{user_info_localization["coalition"]}:</b> {coalition}\n{cursus_info}\n<b>' \
+               f'{user_info_localization["campus"]}:</b> {campus}\n<b>{user_info_localization["location"]}:' \
+               f'</b> {location}'
         if avatar and is_alone:
             text += f'<a href="{image_url}">​</a>'
     return text, login

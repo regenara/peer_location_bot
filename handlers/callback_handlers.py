@@ -7,7 +7,6 @@ from data.config import localization_texts
 from services.keyboards import avatar_keyboard
 from services.keyboards import intra_users_keyboard
 from services.text_compile import friends_list_normalization
-from time import time
 
 
 @dp.callback_query_handler(lambda callback: callback.data in ('ru', 'en'))
@@ -48,11 +47,7 @@ async def switch_notification(callback_query: CallbackQuery):
     count = await mongo.get_count(user_id, 'notifications')
     lang = await mongo.get_lang(user_id)
     if action == 'addToSet' and count == 10:
-        try:
-            alert_text = localization_texts['notifications'][lang]['count']
-        except KeyError as e:
-            print(user_id, time(), nickname, switch, e, localization_texts['notifications'][lang])
-            alert_text = 'NULL'
+        alert_text = localization_texts['notifications'][lang]['count']
         await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
     else:
         intra_users = [button.callback_data.split('=')[1] for row in buttons for button in row][::2]
