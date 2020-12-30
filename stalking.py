@@ -1,4 +1,10 @@
 import asyncio
+from contextlib import suppress
+
+from aiogram.utils.exceptions import ChatNotFound
+from aiogram.utils.exceptions import BotBlocked
+from aiogram.utils.exceptions import UserDeactivated
+
 from data.config import localization_texts
 from misc import bot
 from misc import intra_requests
@@ -21,10 +27,8 @@ async def send_notifications():
                     for user_id in stalkers:
                         lang = await mongo.get_lang(user_id)
                         text = eval(localization_texts['in_campus'][lang])
-                        try:
+                        with suppress(ChatNotFound, BotBlocked, UserDeactivated):
                             await bot.send_message(user_id, text)
-                        except:
-                            pass
                         await asyncio.sleep(0.1)
 
 
