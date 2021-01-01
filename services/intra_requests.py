@@ -37,13 +37,12 @@ class IntraRequests:
     def get_user_coalition(self, nickname: str, access_token: str) -> str:
         url = f'https://api.intra.42.fr/v2/users/{nickname}/coalitions'
         coalitions = self.requests_get(url, access_token)
+        coalition = ''
         if coalitions:
             url = f'https://api.intra.42.fr/v2/users/{nickname}/coalitions_users'
             coalitions_users = self.requests_get(url, access_token)
             coalition_id = coalitions_users[0]['coalition_id']
-            coalition = [coalition['name'] for coalition in coalitions if coalition['id'] == coalition_id][0]
-        else:
-            coalition = '—'
+            coalition = [c['name'] for c in coalitions if c['id'] == coalition_id][0]
         return coalition
 
     def get_last_locations(self, nickname: str, access_token: str) -> list:
