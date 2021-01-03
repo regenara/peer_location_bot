@@ -72,7 +72,7 @@ async def friends_info(message: Message):
 @dp.message_handler(commands=['donate'])
 async def donate(message: Message):
     await message.answer('<a href="https://qiwi.com/payment/form/99999?extra[%27accountType%27]=nickname&extra'
-                         '[%27account%27]=jakebv&amount=150&currency=RUB">На кофе</a>')
+                         '[%27account%27]=jakebv&amount=150&currency=RUB">Donate for coffee</a>')
 
 
 @dp.message_handler(is_mailing=True)
