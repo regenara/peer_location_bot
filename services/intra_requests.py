@@ -50,6 +50,11 @@ class IntraRequests:
         locations = self.requests_get(url, access_token)
         return locations
 
+    def get_feedbacks(self, nickname: str, access_token: str) -> list:
+        url = f'https://api.intra.42.fr/v2/users/{nickname}/scale_teams/as_corrector'
+        feedbacks = self.requests_get(url, access_token, {'per_page': 50})
+        return feedbacks
+
     def get_campuses(self, access_token: str) -> list:
         url = 'https://api.intra.42.fr/v2/campus'
         campuses = self.requests_get(url, access_token, {'per_page': 100})

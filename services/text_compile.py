@@ -91,12 +91,14 @@ def get_last_locations(nickname: str, lang: str) -> str:
     last_location_localization = localization_texts['last_locations']
     local_time = last_location_localization[lang]['local_time']
     nickname_valid = nickname_check(nickname)
-    if not nickname_valid:
-        return eval(user_info_localization['not_found'])
-    access_token = intra_requests.get_token()
-    last_locations = intra_requests.get_last_locations(nickname, access_token)
+    last_locations = {}
     status = '🔴 '
-    if isinstance(last_locations, list) and last_locations:
+    if nickname_valid:
+        access_token = intra_requests.get_token()
+        last_locations = intra_requests.get_last_locations(nickname, access_token)
+    elif len(nickname) > 20:
+        nickname = f'{nickname[:20]}...'
+    if isinstance(last_locations, list):
         campuses = intra_requests.get_campuses(access_token)
         texts = [f'<i>{local_time}</i>']
         for i, location in enumerate(last_locations):
@@ -116,11 +118,48 @@ def get_last_locations(nickname: str, lang: str) -> str:
                 log_time = f'{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
             text = f'<b>{campus[0]} {location["host"]}</b>\n{log_time}'
             texts.append(text)
-    elif isinstance(last_locations, list) and not last_locations:
-        texts = [last_location_localization[lang]['not_logged']]
+        if len(texts) > 1:
+            return f'{status}<b>{nickname}</b>\n' + '\n'.join(texts)
+        return f'{status}<b>{nickname}</b>\n' + last_location_localization[lang]['not_logged']
     else:
         return eval(user_info_localization['not_found'])
-    return f'{status}<b>{nickname}</b>\n' + f'\n'.join(texts)
+
+
+def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> str:
+    nickname_valid = nickname_check(nickname)
+    user_info_localization = localization_texts['user_info'][lang]
+    feedbacks_text = localization_texts['feedbacks'][lang]
+    feedbacks = {}
+    if nickname_valid:
+        access_token = intra_requests.get_token()
+        feedbacks = intra_requests.get_feedbacks(nickname, access_token)
+    elif len(nickname) > 20:
+        nickname = f'{nickname[:20]}...'
+    if isinstance(feedbacks, list):
+        texts = []
+        for feedback in feedbacks[:results_count]:
+            comment = feedback['comment']
+            reverse_comment = feedback['feedback']
+            if comment is not None and reverse_comment is not None:
+                mark = feedback['final_mark']
+                team = feedback['team']['name']
+                project = feedback['team']['project_gitlab_path'].split('/')[-1]
+                get_user = feedback['feedbacks'][0]['user']
+                user = ''
+                if get_user is not None:
+                    user = f'<b>{get_user["login"]}</b>: '
+                rating = feedback['feedbacks'][0]['rating']
+                final_mark = feedback['team']['final_mark']
+                text = f'<b>{team}</b> [{project}]\n<b>{nickname}:</b> <i>{comment.replace("<", "&lt")}</i>\n' \
+                       f'<b>{feedbacks_text["mark"]}:</b> {mark}\n{user}<i>{reverse_comment.replace("<", "&lt")}' \
+                       f'</i>\n<b>{feedbacks_text["rating"]}:</b> {rating}/5\n<b>{feedbacks_text["final_mark"]}:' \
+                       f'</b> {final_mark}'
+                texts.append(text)
+        if texts:
+            return f'<b>{localization_texts["feedbacks"][lang]["evaluations"]}: {nickname}</b>\n' + '\n\n'.join(texts)
+        return f'<b>{nickname}</b>\n{localization_texts["feedbacks"][lang]["not_eval"]}'
+    else:
+        return eval(user_info_localization['not_found'])
 
 
 def friends_list_normalization(message_text: str, friends: list, lang: str) -> str:

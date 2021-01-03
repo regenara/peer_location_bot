@@ -10,10 +10,17 @@ def language_keyboard() -> InlineKeyboardMarkup:
 
 
 def avatar_keyboard(yes: str, no: str) -> InlineKeyboardMarkup:
-    language_kb = InlineKeyboardMarkup(row_width=2)
-    language_kb.row(InlineKeyboardButton(f'{yes} ✅', callback_data='yes'),
-                    InlineKeyboardButton(f'{no} ❌', callback_data='no'))
-    return language_kb
+    avatar_kb = InlineKeyboardMarkup(row_width=2)
+    avatar_kb.row(InlineKeyboardButton(f'{yes} ✅', callback_data='yes'),
+                  InlineKeyboardButton(f'{no} ❌', callback_data='no'))
+    return avatar_kb
+
+
+def results_count_keyboard() -> InlineKeyboardMarkup:
+    results_kb = InlineKeyboardMarkup(row_width=4)
+    for n in (5, 15, 30, 50):
+        results_kb.insert(InlineKeyboardButton(f'{n}', callback_data=f'{n}'))
+    return results_kb
 
 
 def intra_users_keyboard(intra_users: list, friends: list, notifications: list) -> InlineKeyboardMarkup:

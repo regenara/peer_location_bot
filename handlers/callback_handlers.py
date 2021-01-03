@@ -5,6 +5,7 @@ from misc import dp
 from misc import mongo
 from data.config import localization_texts
 from services.keyboards import avatar_keyboard
+from services.keyboards import results_count_keyboard
 from services.keyboards import intra_users_keyboard
 from services.text_compile import friends_list_normalization
 
@@ -23,12 +24,24 @@ async def intra_user_avatar(callback_query: CallbackQuery):
 
 
 @dp.callback_query_handler(lambda callback: callback.data in ('yes', 'no'))
-async def saving_settings(callback_query: CallbackQuery):
+async def feedbacks_count(callback_query: CallbackQuery):
     yes_or_no = callback_query.data == 'yes'
     user_id = callback_query.from_user.id
     message_id = callback_query.message.message_id
     lang = await mongo.get_lang(user_id)
     await mongo.update_tg_user(user_id, {'$set': {'settings.avatar': yes_or_no}})
+    await bot.answer_callback_query(callback_query.id)
+    text = localization_texts['results_count'][lang]
+    await bot.edit_message_text(text, user_id, message_id, reply_markup=results_count_keyboard())
+
+
+@dp.callback_query_handler(lambda callback: callback.data.isdigit())
+async def saving_settings(callback_query: CallbackQuery):
+    results_count = int(callback_query.data)
+    user_id = callback_query.from_user.id
+    message_id = callback_query.message.message_id
+    lang = await mongo.get_lang(user_id)
+    await mongo.update_tg_user(user_id, {'$set': {'settings.results_count': results_count}})
     await bot.answer_callback_query(callback_query.id)
     text = localization_texts['saving_settings'][lang]
     text += localization_texts["help"][lang]

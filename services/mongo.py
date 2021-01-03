@@ -13,7 +13,8 @@ class Mongo:
         self.tg_users = client['tg_users']
 
     async def tg_db_fill(self, user_id: int):
-        data = {'user_id': user_id, 'settings': {'avatar': True, 'lang': 'en'}, 'friends': [], 'notifications': []}
+        data = {'user_id': user_id, 'settings': {'avatar': True, 'lang': 'en', 'results_count': 15},
+                'friends': [], 'notifications': []}
         self.tg_users.insert_one(data)
 
     async def intra_db_fill(self, nickname: str, location: str):
@@ -51,6 +52,18 @@ class Mongo:
         lang = data['settings']['lang']
         return lang
 
+    async def get_results_count(self, user_id: int) -> int:
+        data = await self.find_tg_user(user_id)
+        results_count = data['settings'].get('results_count')
+        if results_count is None:
+            await self.update_tg_user(user_id, {'$set': {'settings.results_count': 15}})
+            results_count = 15
+        return results_count
+
     async def get_intra_users(self) -> AsyncIOMotorCursor:
         cursor = self.intra_users.find({})
+        return cursor
+
+    async def get_tg_users(self) -> AsyncIOMotorCursor:
+        cursor = self.tg_users.find({})
         return cursor

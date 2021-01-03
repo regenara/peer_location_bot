@@ -1,4 +1,10 @@
+import asyncio
+from contextlib import suppress
+
 from aiogram.types import Message
+from aiogram.utils.exceptions import ChatNotFound
+from aiogram.utils.exceptions import BotBlocked
+from aiogram.utils.exceptions import UserDeactivated
 
 from misc import bot
 from misc import dp
@@ -61,3 +67,20 @@ async def friends_info(message: Message):
 @dp.message_handler(commands=['about'])
 async def friends_info(message: Message):
     await message.answer('<a href="https://github.com/JakeBV/peer_location_bot">Source</a>')
+
+
+@dp.message_handler(commands=['donate'])
+async def donate(message: Message):
+    await message.answer('<a href="https://qiwi.com/payment/form/99999?extra[%27accountType%27]=nickname&extra'
+                         '[%27account%27]=jakebv&amount=150&currency=RUB">На кофе</a>')
+
+
+@dp.message_handler(is_mailing=True)
+async def mailing(message: Message):
+    text = message.text[2:]
+    cursor = await mongo.get_tg_users()
+    for document in await cursor.to_list(length=500):
+        user_id = document['user_id']
+        with suppress(ChatNotFound, BotBlocked, UserDeactivated):
+            await bot.send_message(user_id, text)
+        await asyncio.sleep(0.1)

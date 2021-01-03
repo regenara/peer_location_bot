@@ -3,7 +3,7 @@ from os import path
 from services.utils import read_json
 
 
-config = read_json(path.join('data', 'data.json'))
+config = read_json(path.join('data', 'data2.json'))
 api_token = config['api_token']
 client_id = config['client_id']
 client_secret = config['client_secret']

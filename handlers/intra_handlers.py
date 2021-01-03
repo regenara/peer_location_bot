@@ -1,4 +1,4 @@
-from aiogram import types
+from aiogram.types import Message
 
 from data.config import localization_texts
 from misc import bot
@@ -6,20 +6,34 @@ from misc import dp
 from misc import mongo
 from services.keyboards import intra_users_keyboard
 from services.text_compile import get_last_locations
+from services.text_compile import get_user_feedbacks
 from services.text_compile import get_user_info
+from services.utils import safe_split_text
 
 
 @dp.message_handler(text_startswith=['? '])
-async def intra_user_locations(message: types.Message):
+async def intra_user_locations(message: Message):
     user_id = message.from_user.id
-    nickname = message.text[2:].lower().strip()
+    nickname = message.text[2:].lower().strip().replace('@', '')
     lang = await mongo.get_lang(user_id)
     text = get_last_locations(nickname, lang)
     await message.answer(text)
 
 
+@dp.message_handler(text_startswith=['! '])
+async def intra_user_feedbacks(message: Message):
+    user_id = message.from_user.id
+    nickname = message.text[2:].lower().strip().replace('@', '')
+    lang = await mongo.get_lang(user_id)
+    results_count = await mongo.get_results_count(user_id)
+    text = get_user_feedbacks(nickname, lang, results_count)
+    texts = safe_split_text(text)
+    for text in texts:
+        await message.answer(text, disable_web_page_preview=True)
+
+
 @dp.message_handler()
-async def intra_users_info(message: types.Message):
+async def intra_users_info(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
     lang = user_data['settings']['lang']

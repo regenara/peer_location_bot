@@ -16,6 +16,7 @@ from services.mongo import Mongo
 bot = Bot(token=api_token, parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
 dp.filters_factory.bind(services.filters.IsFriendsList)
+dp.filters_factory.bind(services.filters.IsMailing)
 logging.basicConfig(level=logging.INFO)
 
 intra_requests = IntraRequests(client_id, client_secret)
