@@ -70,6 +70,7 @@ class Mongo:
             project = misc.intra_requests.get_project(project_id, access_token)
             data = {'project_id': project['id'], 'name': project['name'], 'slug': project['slug']}
             self.intra_projects.insert_one(data)
+            await asyncio.sleep(1)
         return data
 
     async def get_intra_users(self) -> AsyncIOMotorCursor:
