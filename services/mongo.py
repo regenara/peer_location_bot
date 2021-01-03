@@ -3,6 +3,8 @@ import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from motor.motor_asyncio import AsyncIOMotorCursor
 
+import misc
+
 
 class Mongo:
     def __init__(self, mongo_username: str, mongo_password: str):
@@ -10,6 +12,7 @@ class Mongo:
                   f'{mongo_password}@cluster0-habpf.mongodb.net/test?retryWrites=true&w=majority'
         client = AsyncIOMotorClient(sign_in).intragram
         self.intra_users = client['intra_users']
+        self.intra_projects = client['projects']
         self.tg_users = client['tg_users']
 
     async def tg_db_fill(self, user_id: int):
@@ -59,6 +62,15 @@ class Mongo:
             await self.update_tg_user(user_id, {'$set': {'settings.results_count': 15}})
             results_count = 15
         return results_count
+
+    async def get_project(self, project_id) -> dict:
+        data = await self.intra_projects.find_one({'project_id': project_id})
+        if data is None:
+            access_token = misc.intra_requests.get_token()
+            project = misc.intra_requests.get_project(project_id, access_token)
+            data = {'project_id': project['id'], 'name': project['name'], 'slug': project['slug']}
+            self.intra_projects.insert_one(data)
+        return data
 
     async def get_intra_users(self) -> AsyncIOMotorCursor:
         cursor = self.intra_users.find({})

@@ -125,25 +125,26 @@ def get_last_locations(nickname: str, lang: str) -> str:
         return eval(user_info_localization['not_found'])
 
 
-def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> str:
+async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> str:
     nickname_valid = nickname_check(nickname)
     user_info_localization = localization_texts['user_info'][lang]
     feedbacks_text = localization_texts['feedbacks'][lang]
     feedbacks = {}
     if nickname_valid:
         access_token = intra_requests.get_token()
-        feedbacks = intra_requests.get_feedbacks(nickname, access_token)
+        feedbacks = intra_requests.get_feedbacks(nickname, access_token, results_count)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     if isinstance(feedbacks, list):
         texts = []
-        for feedback in feedbacks[:results_count]:
+        for feedback in feedbacks:
             comment = feedback['comment']
             reverse_comment = feedback['feedback']
             if comment is not None and reverse_comment is not None:
                 mark = feedback['final_mark']
                 team = feedback['team']['name']
-                project = feedback['team']['project_gitlab_path'].split('/')[-1]
+                project_id = feedback['team']['project_id']
+                project = (await mongo.get_project(project_id))['name']
                 get_user = feedback['feedbacks'][0]['user']
                 user = ''
                 if get_user is not None:
