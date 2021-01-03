@@ -47,11 +47,14 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         if location is None:
             location = get_last_seen_time(nickname, access_token, user_info_localization)
             status = '🔴 '
-        text = f'{status}<b>{displayname}</b> aka <code>{nickname}</code>{pool_info}{coalition}\n{cursus_info}\n<b>' \
+        link = f'<b>{displayname}</b>'
+        if is_alone:
+            link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{displayname}</a>'
+        text = f'{status}{link} aka <code>{nickname}</code>{pool_info}{coalition}\n{cursus_info}\n<b>' \
                f'{user_info_localization["campus"]}:</b> {campus}\n<b>{user_info_localization["location"]}:' \
                f'</b> {location}'
         if avatar and is_alone:
-            text += f'<a href="{image_url}">​</a>'
+            text = f'<a href="{image_url}">​</a>' + text
     return text, login
 
 
@@ -118,9 +121,10 @@ def get_last_locations(nickname: str, lang: str) -> str:
                 log_time = f'{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
             text = f'<b>{campus[0]} {location["host"]}</b>\n{log_time}'
             texts.append(text)
+        link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
         if len(texts) > 1:
-            return f'{status}<b>{nickname}</b>\n' + '\n'.join(texts)
-        return f'{status}<b>{nickname}</b>\n' + last_location_localization[lang]['not_logged']
+            return f'{status}{link}\n' + '\n'.join(texts)
+        return f'{status}{link}\n' + last_location_localization[lang]['not_logged']
     else:
         return eval(user_info_localization['not_found'])
 
@@ -148,7 +152,7 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
                 get_user = feedback['feedbacks'][0]['user']
                 user = ''
                 if get_user is not None:
-                    user = f'<b>{get_user["login"]}</b>: '
+                    user = f'<a href="https://profile.intra.42.fr/users/{get_user["login"]}">{get_user["login"]}</a>: '
                 rating = feedback['feedbacks'][0]['rating']
                 final_mark = feedback['team']['final_mark']
                 text = f'<b>{team}</b> [{project}]\n<b>{nickname}:</b> <i>{comment.replace("<", "&lt")}</i>\n' \
@@ -156,9 +160,10 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
                        f'</i>\n<b>{feedbacks_text["rating"]}:</b> {rating}/5\n<b>{feedbacks_text["final_mark"]}:' \
                        f'</b> {final_mark}'
                 texts.append(text)
+        link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
         if texts:
-            return f'<b>{localization_texts["feedbacks"][lang]["evaluations"]}: {nickname}</b>\n' + '\n\n'.join(texts)
-        return f'<b>{nickname}</b>\n{localization_texts["feedbacks"][lang]["not_eval"]}'
+            return f'<b>{localization_texts["feedbacks"][lang]["evaluations"]}:</b> {link}\n' + '\n\n'.join(texts)
+        return f'{link}\n{localization_texts["feedbacks"][lang]["not_eval"]}'
     else:
         return eval(user_info_localization['not_found'])
 
