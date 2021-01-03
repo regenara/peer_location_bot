@@ -27,5 +27,4 @@ class IsMailing(BoundFilter):
         self.is_mailing = is_mailing
 
     async def check(self, message: Message):
-        user_id = message.from_user.id
-        return message.text.startswith('$ ') and user_id == 373749366
+        return message.text.startswith('$ ') and message.from_user.id == 373749366
