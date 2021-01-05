@@ -142,8 +142,8 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
             comment = feedback['comment']
             reverse_comment = feedback['feedback']
             if comment is not None and reverse_comment is not None:
-                comment = comment.replace('\n\n', '\n').replace("<", "&lt")
-                reverse_comment = reverse_comment.replace('\n\n', '\n').replace("<", "&lt")
+                comment = comment.replace("<", "&lt")
+                reverse_comment = reverse_comment.replace("<", "&lt")
                 mark = feedback['final_mark']
                 team = feedback['team']['name']
                 project_id = feedback['team']['project_id']
