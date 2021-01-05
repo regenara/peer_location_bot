@@ -35,7 +35,7 @@ class IntraRequests:
                                              'client_secret': client_secret}).json()
         access_token = request['access_token']
         self.clients[key] = {'client_id': client_id, 'client_secret': client_secret,
-                             'access_token': access_token, 'last_call': 0}
+                             'access_token': access_token, 'last_call': time()}
 
     def get_user(self, nickname: str) -> dict:
         url = f'https://api.intra.42.fr/v2/users/{nickname}'
