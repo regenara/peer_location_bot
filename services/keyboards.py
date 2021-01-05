@@ -1,5 +1,19 @@
+from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.types import InlineKeyboardButton
+
+from data.config import localization_texts
+
+
+def menu_keyboard(lang: str) -> ReplyKeyboardMarkup:
+    menu_kb = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    texts = localization_texts['menu'][lang]
+    buttons = []
+    for text in list(texts)[1:]:
+        buttons.append(KeyboardButton(f'{texts[text]}'))
+    menu_kb.add(KeyboardButton(f'{texts["friends"]}')).add(*buttons)
+    return menu_kb
 
 
 def language_keyboard() -> InlineKeyboardMarkup:

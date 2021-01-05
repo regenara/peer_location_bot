@@ -7,6 +7,7 @@ from data.config import localization_texts
 from services.keyboards import avatar_keyboard
 from services.keyboards import results_count_keyboard
 from services.keyboards import intra_users_keyboard
+from services.keyboards import menu_keyboard
 from services.text_compile import friends_list_normalization
 
 
@@ -45,7 +46,8 @@ async def saving_settings(callback_query: CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     text = localization_texts['saving_settings'][lang]
     text += localization_texts["help"][lang]
-    await bot.edit_message_text(text, user_id, message_id)
+    await bot.delete_message(user_id, message_id)
+    await bot.send_message(user_id, text, reply_markup=menu_keyboard(lang))
 
 
 @dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('on', 'off'))

@@ -12,10 +12,11 @@ from misc import mongo
 from data.config import localization_texts
 from services.keyboards import intra_users_keyboard
 from services.keyboards import language_keyboard
+from services.keyboards import menu_keyboard
 from services.text_compile import get_user_info
 
 
-@dp.message_handler(commands=['start'])
+@dp.message_handler(is_settings=True)
 async def send_welcome(message: Message):
     user_id = message.from_user.id
     lang = await mongo.get_lang(user_id)
@@ -23,7 +24,7 @@ async def send_welcome(message: Message):
     await message.answer(text, reply_markup=language_keyboard())
 
 
-@dp.message_handler(commands=['help'])
+@dp.message_handler(is_help=True)
 async def send_help(message: Message):
     user_id = message.from_user.id
     lang = await mongo.get_lang(user_id)
@@ -31,7 +32,7 @@ async def send_help(message: Message):
     await message.answer(text)
 
 
-@dp.message_handler(commands=['friends'])
+@dp.message_handler(is_friends=True)
 async def friends_info(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
@@ -64,12 +65,12 @@ async def friends_info(message: Message):
         await bot.send_message(user_id, text, reply_markup=intra_users_keyboard(friends, friends, notifications))
 
 
-@dp.message_handler(commands=['about'])
+@dp.message_handler(is_about=True)
 async def friends_info(message: Message):
     await message.answer('<a href="https://github.com/JakeBV/peer_location_bot">Source</a>')
 
 
-@dp.message_handler(commands=['donate'])
+@dp.message_handler(is_donate=True)
 async def donate(message: Message):
     await message.answer('<a href="https://qiwi.com/payment/form/99999?extra[%27accountType%27]=nickname&extra'
                          '[%27account%27]=jakebv&amount=150&currency=RUB">Donate for coffee</a>')
@@ -81,6 +82,8 @@ async def mailing(message: Message):
     cursor = await mongo.get_tg_users()
     for document in await cursor.to_list(length=500):
         user_id = document['user_id']
+        lang = document['settings']['lang']
         with suppress(ChatNotFound, BotBlocked, UserDeactivated):
-            await bot.send_message(user_id, text)
+            await bot.send_message(user_id, text, reply_markup=menu_keyboard(lang))
         await asyncio.sleep(0.1)
+    await message.answer('Готово!')
