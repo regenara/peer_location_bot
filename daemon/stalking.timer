@@ -2,8 +2,8 @@
 Description=stalking
 
 [Timer]
-OnUnitActiveSec=1000s
-OnBootSec=1000s
+OnUnitActiveSec=300s
+OnBootSec=300s
 
 [Install]
 WantedBy=default.target

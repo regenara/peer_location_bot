@@ -80,10 +80,13 @@ async def donate(message: Message):
 async def mailing(message: Message):
     text = message.text[2:]
     cursor = await mongo.get_tg_users()
-    for document in await cursor.to_list(length=500):
-        user_id = document['user_id']
-        lang = document['settings']['lang']
-        with suppress(ChatNotFound, BotBlocked, UserDeactivated):
-            await bot.send_message(user_id, text, reply_markup=menu_keyboard(lang))
-        await asyncio.sleep(0.1)
+    documents = await cursor.to_list(length=100)
+    while documents:
+        for document in documents:
+            user_id = document['user_id']
+            lang = document['settings']['lang']
+            with suppress(ChatNotFound, BotBlocked, UserDeactivated):
+                await bot.send_message(user_id, text, reply_markup=menu_keyboard(lang))
+            await asyncio.sleep(0.1)
+        documents = await cursor.to_list(length=100)
     await message.answer('Готово!')

@@ -66,8 +66,7 @@ class Mongo:
     async def get_project(self, project_id) -> dict:
         data = await self.intra_projects.find_one({'project_id': project_id})
         if data is None:
-            access_token = misc.intra_requests.get_token()
-            project = misc.intra_requests.get_project(project_id, access_token)
+            project = misc.intra_requests.get_project(project_id)
             data = {'project_id': project['id'], 'name': project['name'], 'slug': project['slug']}
             self.intra_projects.insert_one(data)
             await asyncio.sleep(1)

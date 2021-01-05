@@ -14,14 +14,13 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
     nickname = nickname.replace('@', '')
     info = {}
     if nickname_valid:
-        access_token = intra_requests.get_token()
-        info = intra_requests.get_user(nickname, access_token)
+        info = intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     text = eval(user_info_localization['not_found'])
     login = ''
     if info:
-        coalition = intra_requests.get_user_coalition(nickname, access_token)
+        coalition = intra_requests.get_user_coalition(nickname)
         if coalition:
             coalition = f'\n<b>{user_info_localization["coalition"]}:</b> {coalition}'
         months = {'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
@@ -45,7 +44,7 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
             location = user_info_localization['ask_adm']
             status = ''
         if location is None:
-            location = get_last_seen_time(nickname, access_token, user_info_localization)
+            location = get_last_seen_time(nickname, user_info_localization)
             status = '🔴 '
         link = f'<b>{displayname}</b>'
         if is_alone:
@@ -58,8 +57,8 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
     return text, login
 
 
-def get_last_seen_time(nickname: str, access_token: str, user_info_localization: dict) -> str:
-    last_location_info = intra_requests.get_last_locations(nickname, access_token)
+def get_last_seen_time(nickname: str, user_info_localization: dict) -> str:
+    last_location_info = intra_requests.get_last_locations(nickname)
     if not last_location_info:
         text = user_info_localization['not_on_campus']
         return text[:text.index('.')].replace("f'", '')
@@ -97,12 +96,11 @@ def get_last_locations(nickname: str, lang: str) -> str:
     last_locations = {}
     status = '🔴 '
     if nickname_valid:
-        access_token = intra_requests.get_token()
-        last_locations = intra_requests.get_last_locations(nickname, access_token)
+        last_locations = intra_requests.get_last_locations(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     if isinstance(last_locations, list):
-        campuses = intra_requests.get_campuses(access_token)
+        campuses = intra_requests.get_campuses()
         texts = [f'<i>{local_time}</i>']
         for i, location in enumerate(last_locations):
             campus = [(campus['name'], campus['time_zone']) for campus in campuses
@@ -135,8 +133,7 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
     feedbacks_text = localization_texts['feedbacks'][lang]
     feedbacks = {}
     if nickname_valid:
-        access_token = intra_requests.get_token()
-        feedbacks = intra_requests.get_feedbacks(nickname, access_token, results_count)
+        feedbacks = intra_requests.get_feedbacks(nickname, results_count)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     if isinstance(feedbacks, list):
