@@ -142,6 +142,8 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
             comment = feedback['comment']
             reverse_comment = feedback['feedback']
             if comment is not None and reverse_comment is not None:
+                comment = comment.replace('\n\n', '\n').replace("<", "&lt")
+                reverse_comment = reverse_comment.replace('\n\n', '\n').replace("<", "&lt")
                 mark = feedback['final_mark']
                 team = feedback['team']['name']
                 project_id = feedback['team']['project_id']
@@ -152,8 +154,8 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
                     user = f'<a href="https://profile.intra.42.fr/users/{get_user["login"]}">{get_user["login"]}</a>: '
                 rating = feedback['feedbacks'][0]['rating']
                 final_mark = feedback['team']['final_mark']
-                text = f'<b>{team}</b> [{project}]\n<b>{nickname}:</b> <i>{comment.replace("<", "&lt")}</i>\n' \
-                       f'<b>{feedbacks_text["mark"]}:</b> {mark}\n{user}<i>{reverse_comment.replace("<", "&lt")}' \
+                text = f'<b>{team}</b> [{project}]\n<b>{nickname}:</b> <i>{comment}</i>\n' \
+                       f'<b>{feedbacks_text["mark"]}:</b> {mark}\n{user}<i>{reverse_comment}' \
                        f'</i>\n<b>{feedbacks_text["rating"]}:</b> {rating}/5\n<b>{feedbacks_text["final_mark"]}:' \
                        f'</b> {final_mark}'
                 texts.append(text)
