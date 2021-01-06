@@ -17,8 +17,9 @@ bot = Bot(token=api_token, parse_mode=types.ParseMode.HTML)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-for custom_filter in (filters.IsFriends, filters.IsSettings, filters.IsHelp, filters.IsAbout,
-                      filters.IsDonate, filters.IsFriendsList, filters.IsMailing):
+for custom_filter in (filters.IsNoFriends, filters.IsAloneFriend, filters.IsFriends, filters.IsSettings, filters.IsHelp,
+                      filters.IsSingleRequest, filters.IsAbout, filters.IsDonate, filters.IsFriendsList,
+                      filters.IsMailing):
     dp.filters_factory.bind(custom_filter)
 
 logging.basicConfig(level=logging.INFO)

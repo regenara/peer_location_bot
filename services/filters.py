@@ -6,6 +6,37 @@ from data.config import localization_texts
 import misc
 
 
+class IsNoFriends(BoundFilter):
+    key = 'is_no_friends'
+
+    def __init__(self, is_no_friends):
+        self.is_no_friends = is_no_friends
+
+    async def check(self, message: Message) -> bool:
+        user_id = message.from_user.id
+        user_data = await misc.mongo.find_tg_user(user_id)
+        friends = user_data['friends']
+        text = message.text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['friends'] for key in menu]
+        return (text == '/friends' or text in menu_texts) and not friends
+
+
+class IsAloneFriend(BoundFilter):
+    key = 'is_alone_friend'
+
+    def __init__(self, is_alone_friend):
+        self.is_alone_friend = is_alone_friend
+
+    async def check(self, message: Message) -> bool:
+        user_id = message.from_user.id
+        count = await misc.mongo.get_count(user_id, 'friends')
+        text = message.text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['friends'] for key in menu]
+        return (text == '/friends' or text in menu_texts) and count == 1
+
+
 class IsFriends(BoundFilter):
     key = 'is_friends'
 
@@ -17,6 +48,17 @@ class IsFriends(BoundFilter):
         menu = localization_texts['menu']
         menu_texts = [menu[key]['friends'] for key in menu]
         return text == '/friends' or text in menu_texts
+
+
+class IsSingleRequest(BoundFilter):
+    key = 'is_single_request'
+
+    def __init__(self, is_single_request):
+        self.is_single_request = is_single_request
+
+    async def check(self, message: Message) -> bool:
+        text = message.text
+        return len(text.split()) < 2
 
 
 class IsSettings(BoundFilter):

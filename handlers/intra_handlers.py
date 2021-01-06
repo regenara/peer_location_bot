@@ -35,35 +35,43 @@ async def intra_user_feedbacks(message: Message):
         await message.answer(text, disable_web_page_preview=True)
 
 
-@dp.message_handler()
-@dp.throttled(throttled, rate=10)
-async def intra_users_info(message: Message):
+@dp.message_handler(is_single_request=True)
+@dp.throttled(throttled, rate=3)
+async def single_request(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
     lang = user_data['settings']['lang']
     avatar = user_data['settings']['avatar']
     friends = user_data['friends']
     notifications = user_data['notifications']
+    nickname = message.text.strip().lower()
+    text, is_nickname = await get_user_info(nickname, lang, True, avatar)
+    keyboard = None
+    if is_nickname:
+        keyboard = intra_users_keyboard([nickname], friends, notifications)
+    await message.answer(text, reply_markup=keyboard)
+
+
+@dp.message_handler()
+@dp.throttled(throttled, rate=10)
+async def intra_users_info(message: Message):
+    user_id = message.from_user.id
+    user_data = await mongo.find_tg_user(user_id)
+    lang = user_data['settings']['lang']
+    friends = user_data['friends']
+    notifications = user_data['notifications']
     get_nicknames = message.text.lower().split()
     nicknames = list(dict.fromkeys(get_nicknames))[:5]
-    nicknames_count = len(nicknames)
-    keyboard = None
-    if nicknames_count == 1:
-        text, is_nickname = await get_user_info(nicknames[0], lang, True, avatar)
+    text = localization_texts['wait'][lang]
+    message_id = (await bot.send_message(user_id, text)).message_id
+    texts = []
+    intra_users = []
+    for nickname in nicknames:
+        text, is_nickname = await get_user_info(nickname, lang, False)
+        texts.append(text)
         if is_nickname:
-            keyboard = intra_users_keyboard([is_nickname], friends, notifications)
-    else:
-        text = localization_texts['wait'][lang]
-    message_id = (await bot.send_message(user_id, text, reply_markup=keyboard)).message_id
-    if nicknames_count > 1:
-        texts = []
-        intra_users = []
-        for nickname in nicknames:
-            text, is_nickname = await get_user_info(nickname, lang, False)
-            texts.append(text)
-            if is_nickname:
-                intra_users.append(is_nickname)
-            text = '\n\n'.join(texts)
-            await bot.edit_message_text(text, user_id, message_id)
-        await bot.delete_message(user_id, message_id)
-        await bot.send_message(user_id, text, reply_markup=intra_users_keyboard(intra_users, friends, notifications))
+            intra_users.append(is_nickname)
+        text = '\n\n'.join(texts)
+        await bot.edit_message_text(text, user_id, message_id)
+    await bot.delete_message(user_id, message_id)
+    await bot.send_message(user_id, text, reply_markup=intra_users_keyboard(intra_users, friends, notifications))
