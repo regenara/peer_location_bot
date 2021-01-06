@@ -42,7 +42,7 @@ async def no_friends(message: Message):
 
 
 @dp.message_handler(is_alone_friend=True)
-@dp.throttled(throttled, rate=5)
+@dp.throttled(throttled, rate=3)
 async def alone_friend(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
