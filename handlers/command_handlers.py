@@ -49,9 +49,8 @@ async def alone_friend(message: Message):
     lang = user_data['settings']['lang']
     friends = user_data['friends']
     notifications = user_data['notifications']
-    head = f'<b>{localization_texts["friends"][lang]["list"]}</b>'
     text, nickname = await get_user_info(friends[0], lang, True)
-    text = f'{head}\n\n{text}'
+    text = f'<b>{localization_texts["friends"][lang]["list"]}</b>\n\n{text}'
     keyboard = intra_users_keyboard(friends, friends, notifications)
     await message.answer(text, reply_markup=keyboard)
 
