@@ -40,5 +40,6 @@
   "feedbacks": {"ru": {"evaluations": "Оценки", "mark": "Оценка", "rating": "Рейтинг", "final_mark": "Итоговая оценка", "not_eval": "Пользователь еще никого не оценивал"},
                 "en": {"evaluations": "Evaluations","mark": "Mark", "rating": "Rating", "final_mark": "Final mark", "not_eval": "The user has not evaluated anyone yet"}},
   "menu": {"ru": {"friends": "\u200BДрузья \uD83E\uDD1D", "settings": "\u200BНастройки \uD83D\uDEE0", "help": "\u200BПомощь \uD83D\uDCAC", "about": "\u200BИсходники ⚙", "donate": "\u200BДонаты ☕"},
-           "en": {"friends": "\u200BFriends \uD83E\uDD1D", "settings": "\u200BSettings \uD83D\uDEE0", "help": "\u200BHelp \uD83D\uDCAC", "about": "\u200BAbout ⚙", "donate": "\u200BDonate ☕"}}
+           "en": {"friends": "\u200BFriends \uD83E\uDD1D", "settings": "\u200BSettings \uD83D\uDEE0", "help": "\u200BHelp \uD83D\uDCAC", "about": "\u200BAbout ⚙", "donate": "\u200BDonate ☕"}},
+  "antiflood": {"ru": "f'Слишком много запросов! Повтори через {rate} сек'", "en": "f'Too many requests! Repeat after {rate} seconds'"}
 }

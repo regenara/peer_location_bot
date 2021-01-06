@@ -6,6 +6,7 @@ from aiogram.utils.exceptions import ChatNotFound
 from aiogram.utils.exceptions import BotBlocked
 from aiogram.utils.exceptions import UserDeactivated
 
+from handlers.throttling import throttled
 from misc import bot
 from misc import dp
 from misc import mongo
@@ -33,6 +34,7 @@ async def send_help(message: Message):
 
 
 @dp.message_handler(is_friends=True)
+@dp.throttled(throttled, rate=30)
 async def friends_info(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
@@ -66,7 +68,7 @@ async def friends_info(message: Message):
 
 
 @dp.message_handler(is_about=True)
-async def friends_info(message: Message):
+async def about(message: Message):
     await message.answer('<a href="https://github.com/JakeBV/peer_location_bot">Source</a>')
 
 

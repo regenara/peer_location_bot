@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot
 from aiogram import Dispatcher
 from aiogram import types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from data.config import api_token
 from data.config import clients
@@ -13,7 +14,8 @@ from services.intra_requests import IntraRequests
 from services.mongo import Mongo
 
 bot = Bot(token=api_token, parse_mode=types.ParseMode.HTML)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
 for custom_filter in (filters.IsFriends, filters.IsSettings, filters.IsHelp, filters.IsAbout,
                       filters.IsDonate, filters.IsFriendsList, filters.IsMailing):

@@ -1,6 +1,7 @@
 from aiogram.types import Message
 
 from data.config import localization_texts
+from handlers.throttling import throttled
 from misc import bot
 from misc import dp
 from misc import mongo
@@ -12,6 +13,7 @@ from services.utils import safe_split_text
 
 
 @dp.message_handler(text_startswith=['?'])
+@dp.throttled(throttled, rate=3)
 async def intra_user_locations(message: Message):
     user_id = message.from_user.id
     nickname = message.text[1:].lower().strip().replace('@', '')
@@ -21,6 +23,7 @@ async def intra_user_locations(message: Message):
 
 
 @dp.message_handler(text_startswith=['!'])
+@dp.throttled(throttled, rate=3)
 async def intra_user_feedbacks(message: Message):
     user_id = message.from_user.id
     nickname = message.text[1:].lower().strip().replace('@', '')
@@ -33,6 +36,7 @@ async def intra_user_feedbacks(message: Message):
 
 
 @dp.message_handler()
+@dp.throttled(throttled, rate=10)
 async def intra_users_info(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
