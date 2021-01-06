@@ -13,11 +13,10 @@ class IsFriends(BoundFilter):
         self.is_friends = is_friends
 
     async def check(self, message: Message) -> bool:
-        user_id = message.from_user.id
-        lang = await misc.mongo.get_lang(user_id)
         text = message.text
-        settings_text = localization_texts['menu'][lang]['friends']
-        return text == '/friends' or settings_text == text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['friends'] for key in menu]
+        return text == '/friends' or text in menu_texts
 
 
 class IsSettings(BoundFilter):
@@ -27,11 +26,10 @@ class IsSettings(BoundFilter):
         self.is_settings = is_settings
 
     async def check(self, message: Message) -> bool:
-        user_id = message.from_user.id
-        lang = await misc.mongo.get_lang(user_id)
         text = message.text
-        settings_text = localization_texts['menu'][lang]['settings']
-        return text == '/start' or settings_text == text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['settings'] for key in menu]
+        return text == '/start' or text in menu_texts
 
 
 class IsHelp(BoundFilter):
@@ -41,11 +39,10 @@ class IsHelp(BoundFilter):
         self.is_help = is_help
 
     async def check(self, message: Message) -> bool:
-        user_id = message.from_user.id
-        lang = await misc.mongo.get_lang(user_id)
         text = message.text
-        settings_text = localization_texts['menu'][lang]['help']
-        return text == '/help' or settings_text == text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['help'] for key in menu]
+        return text == '/help' or text in menu_texts
 
 
 class IsAbout(BoundFilter):
@@ -55,11 +52,10 @@ class IsAbout(BoundFilter):
         self.is_about = is_about
 
     async def check(self, message: Message) -> bool:
-        user_id = message.from_user.id
-        lang = await misc.mongo.get_lang(user_id)
         text = message.text
-        settings_text = localization_texts['menu'][lang]['about']
-        return text == '/about' or settings_text == text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['about'] for key in menu]
+        return text == '/about' or text in menu_texts
 
 
 class IsDonate(BoundFilter):
@@ -69,11 +65,10 @@ class IsDonate(BoundFilter):
         self.is_donate = is_donate
 
     async def check(self, message: Message) -> bool:
-        user_id = message.from_user.id
-        lang = await misc.mongo.get_lang(user_id)
         text = message.text
-        settings_text = localization_texts['menu'][lang]['donate']
-        return text == '/donate' or settings_text == text
+        menu = localization_texts['menu']
+        menu_texts = [menu[key]['donate'] for key in menu]
+        return text == '/donate' or text in menu_texts
 
 
 class IsFriendsList(BoundFilter):

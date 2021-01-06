@@ -34,7 +34,7 @@ async def send_help(message: Message):
 
 
 @dp.message_handler(is_friends=True)
-@dp.throttled(throttled, rate=30)
+@dp.throttled(throttled, rate=20)
 async def friends_info(message: Message):
     user_id = message.from_user.id
     user_data = await mongo.find_tg_user(user_id)
