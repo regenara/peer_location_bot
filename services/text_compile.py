@@ -8,6 +8,13 @@ from misc import mongo
 from services.utils import nickname_check
 
 
+def check_campus(info: dict) -> bool:
+    campuses_ids = (17, 23)
+    primary_campus_id = [campus['campus_id'] for campus in info['campus_users'] if campus['is_primary']][0]
+    campus = [campus['id'] for campus in info['campus'] if campus['id'] == primary_campus_id][0]
+    return campus in campuses_ids
+
+
 async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple:
     user_info_localization = localization_texts['user_info'][lang]
     nickname_valid = nickname_check(nickname)
@@ -19,7 +26,7 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         nickname = f'{nickname[:20]}...'
     text = eval(user_info_localization['not_found'])
     login = ''
-    if info:
+    if info and check_campus(info):
         coalition = intra_requests.get_user_coalition(nickname)
         if coalition:
             coalition = f'\n<b>{user_info_localization["coalition"]}:</b> {coalition}'
@@ -99,7 +106,7 @@ def get_last_locations(nickname: str, lang: str) -> str:
         last_locations = intra_requests.get_last_locations(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
-    if isinstance(last_locations, list):
+    if isinstance(last_locations, list) and check_campus(intra_requests.get_user(nickname)):
         campuses = intra_requests.get_campuses()
         texts = [f'<i>{local_time}</i>']
         for i, location in enumerate(last_locations):
@@ -136,7 +143,7 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
         feedbacks = intra_requests.get_feedbacks(nickname, results_count)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
-    if isinstance(feedbacks, list):
+    if isinstance(feedbacks, list) and check_campus(intra_requests.get_user(nickname)):
         texts = []
         for feedback in feedbacks:
             comment = feedback['comment']
