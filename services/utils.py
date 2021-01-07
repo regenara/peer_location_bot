@@ -19,11 +19,11 @@ def nickname_check(nickname: str) -> bool:
 def safe_split_text(text: str) -> list:
     temp_text = text
     parts = []
-    length = 3500
+    length = 3800
     while temp_text:
         if len(temp_text) > length:
             try:
-                split_pos = temp_text[:length].rindex('\n\n')
+                split_pos = temp_text[:length].rindex('\n<b>')
             except ValueError:
                 split_pos = length
             if split_pos < length // 4 * 3:
