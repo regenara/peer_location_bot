@@ -1,4 +1,7 @@
+from contextlib import suppress
+
 from aiogram.types import CallbackQuery
+from aiogram.utils.exceptions import MessageToDeleteNotFound
 
 from misc import bot
 from misc import dp
@@ -46,7 +49,8 @@ async def saving_settings(callback_query: CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     text = localization_texts['saving_settings'][lang]
     text += localization_texts["help"][lang]
-    await bot.delete_message(user_id, message_id)
+    with suppress(MessageToDeleteNotFound):
+        await bot.delete_message(user_id, message_id)
     await bot.send_message(user_id, text, reply_markup=menu_keyboard(lang))
 
 
