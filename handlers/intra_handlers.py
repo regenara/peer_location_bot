@@ -1,4 +1,8 @@
+from contextlib import suppress
+
 from aiogram.types import Message
+from aiogram.utils.exceptions import MessageToEditNotFound
+from aiogram.utils.exceptions import MessageToDeleteNotFound
 
 from data.config import localization_texts
 from handlers.throttling import throttled
@@ -72,6 +76,8 @@ async def intra_users_info(message: Message):
         if is_nickname:
             intra_users.append(is_nickname)
         text = '\n\n'.join(texts)
-        await bot.edit_message_text(text, user_id, message_id)
-    await bot.delete_message(user_id, message_id)
+        with suppress(MessageToEditNotFound):
+            await bot.edit_message_text(text, user_id, message_id)
+    with suppress(MessageToDeleteNotFound):
+        await bot.delete_message(user_id, message_id)
     await bot.send_message(user_id, text, reply_markup=intra_users_keyboard(intra_users, friends, notifications))

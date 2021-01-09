@@ -5,6 +5,8 @@ from aiogram.types import Message
 from aiogram.utils.exceptions import ChatNotFound
 from aiogram.utils.exceptions import BotBlocked
 from aiogram.utils.exceptions import UserDeactivated
+from aiogram.utils.exceptions import MessageToEditNotFound
+from aiogram.utils.exceptions import MessageToDeleteNotFound
 
 from handlers.throttling import throttled
 from misc import bot
@@ -73,10 +75,12 @@ async def friends_info(message: Message):
         text, nickname = await get_user_info(friend, lang, False)
         texts.append(text)
         text = '\n\n'.join(texts)
-        await bot.edit_message_text(text, user_id, message_id)
+        with suppress(MessageToEditNotFound):
+            await bot.edit_message_text(text, user_id, message_id)
     texts[0] = head
     text = '\n\n'.join(texts)
-    await bot.delete_message(user_id, message_id)
+    with suppress(MessageToDeleteNotFound):
+        await bot.delete_message(user_id, message_id)
     await bot.send_message(user_id, text, reply_markup=intra_users_keyboard(friends, friends, notifications))
 
 
