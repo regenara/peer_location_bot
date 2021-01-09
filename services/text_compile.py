@@ -176,6 +176,41 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
         return eval(user_info_localization['not_found'])
 
 
+def get_host_info(host: str, lang: str) -> str:
+    host_valid = nickname_check(host)
+    host_info = []
+    if host_valid:
+        host_info = intra_requests.get_host(host)
+    elif len(host) > 20:
+        host = f'{host[:20]}...'
+    if host_info and host_info[0]['campus_id'] in (23, 17):
+        last_use = host_info[0]
+        user = last_use['user']['login']
+        host = last_use['host']
+        link = f'<a href="https://profile.intra.42.fr/users/{user}">{user}</a>'
+        campus_id = last_use['campus_id']
+        campuses = intra_requests.get_campuses()
+        campus = [(campus['name'], campus['time_zone']) for campus in campuses if campus['id'] == campus_id][0]
+        time_format = '%H:%M  %d.%m.%y'
+        begin_at = last_use['begin_at'].replace('Z', '+00:00')
+        log_in_time = datetime.fromisoformat(begin_at).astimezone(timezone(campus[1])).strftime(time_format)
+        log_out_time = localization_texts['last_locations'][lang]['now']
+        local_time = localization_texts['last_locations'][lang]['local_time']
+        head = f'<b>{campus[0]} {host}</b>'
+        status = '🟢 '
+        text = f'{head}\n{link}\n<i>{local_time}</i>'
+        if last_use['end_at'] is not None:
+            status = '🔴 '
+            end_at = last_use['end_at'].replace('Z', '+00:00')
+            log_out_time = datetime.fromisoformat(end_at).astimezone(timezone(campus[1])).strftime(time_format)
+            text = f'{head}\n{localization_texts["host"][lang]["last_user"]}{link}\n<i>{local_time}</i>'
+        log_time = f'{log_in_time} - {log_out_time}'
+        if log_in_time[7:] == log_out_time[7:]:
+            log_time = f'{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
+        return f'{status}{text}\n{log_time}'
+    return eval(localization_texts['host'][lang]['not_found'])
+
+
 def friends_list_normalization(message_text: str, friends: list, lang: str) -> str:
     friends_info = message_text.split('\n\n')
     friends_list = [s for s in friends_info[1:] if any(x in s for x in friends)]

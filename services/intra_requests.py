@@ -68,6 +68,11 @@ class IntraRequests:
         project = self.requests_get(url)
         return project
 
+    def get_host(self, host: str) -> list:
+        url = 'https://api.intra.42.fr/v2/locations'
+        info = self.requests_get(url, {'filter[host]': host})
+        return info
+
     def get_campuses(self) -> list:
         url = 'https://api.intra.42.fr/v2/campus'
         campuses = self.requests_get(url, {'per_page': 100})

@@ -41,5 +41,7 @@
                 "en": {"evaluations": "Evaluations","mark": "Mark", "rating": "Rating", "final_mark": "Final mark", "not_eval": "The user has not evaluated anyone yet"}},
   "menu": {"ru": {"friends": "\u200BДрузья \uD83E\uDD1D", "settings": "\u200BНастройки \uD83D\uDEE0", "help": "\u200BПомощь \uD83D\uDCAC", "about": "\u200BИсходники ⚙", "donate": "\u200BДонаты ☕"},
            "en": {"friends": "\u200BFriends \uD83E\uDD1D", "settings": "\u200BSettings \uD83D\uDEE0", "help": "\u200BHelp \uD83D\uDCAC", "about": "\u200BAbout ⚙", "donate": "\u200BDonate ☕"}},
+  "host": {"ru": {"last_user": "Сейчас здесь никого. Последний пользователь: ", "not_found": "f'Не найдено: <b>{host.replace(\"<\", \"&lt\")}</b>!'"},
+           "en": {"last_user": "There's no one here right now. Last user: ", "not_found": "f'Not found: <b>{host.replace(\"<\", \"&lt\")}</b>!'"}},
   "antiflood": {"ru": "f'Слишком много запросов! Повтори через {rate} сек'", "en": "f'Too many requests! Repeat after {rate} seconds'"}
 }

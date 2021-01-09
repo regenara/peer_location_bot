@@ -13,6 +13,7 @@ from services.keyboards import intra_users_keyboard
 from services.text_compile import get_last_locations
 from services.text_compile import get_user_feedbacks
 from services.text_compile import get_user_info
+from services.text_compile import get_host_info
 from services.utils import safe_split_text
 
 
@@ -37,6 +38,20 @@ async def intra_user_feedbacks(message: Message):
     texts = safe_split_text(text)
     for text in texts:
         await message.answer(text, disable_web_page_preview=True)
+
+
+@dp.message_handler(text_startswith=['#'])
+@dp.throttled(throttled, rate=3)
+async def host_info(message: Message):
+    user_id = message.from_user.id
+    host = message.text[1:].lower().strip()
+    lang = await mongo.get_lang(user_id)
+    text = localization_texts['wait'][lang]
+    message_id = (await bot.send_message(user_id, text)).message_id
+    text = get_host_info(host, lang)
+    with suppress(MessageToDeleteNotFound):
+        await bot.delete_message(user_id, message_id)
+    await message.answer(text, disable_web_page_preview=True)
 
 
 @dp.message_handler(is_single_request=True)
