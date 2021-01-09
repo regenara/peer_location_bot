@@ -2,6 +2,8 @@ from datetime import datetime
 from pytz import timezone
 from time import mktime
 
+from aiogram.utils.markdown import hide_link
+
 from data.config import localization_texts
 from misc import intra_requests
 from misc import mongo
@@ -60,7 +62,7 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
                f'{user_info_localization["campus"]}:</b> {campus}\n<b>{user_info_localization["location"]}:' \
                f'</b> {location}'
         if avatar and is_alone:
-            text = f'<a href="{image_url}">​</a>' + text
+            text = hide_link(image_url) + text
     return text, login
 
 
