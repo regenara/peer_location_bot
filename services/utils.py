@@ -19,7 +19,7 @@ def nickname_check(nickname: str) -> bool:
 def safe_split_text(text: str) -> list:
     temp_text = text
     parts = []
-    length = 3800
+    length = 3500
     while temp_text:
         if len(temp_text) > length:
             try:
