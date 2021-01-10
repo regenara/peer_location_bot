@@ -17,7 +17,7 @@ def check_campus(info: dict) -> bool:
     return campus in campuses_ids
 
 
-async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple[str, str]:
+async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple:
     user_info_localization = localization_texts['user_info'][lang]
     nickname_valid = nickname_check(nickname)
     nickname = nickname.replace('@', '')
@@ -176,7 +176,7 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
         return eval(user_info_localization['not_found'])
 
 
-async def get_host_info(host: str, lang: str) -> tuple[str, str]:
+async def get_host_info(host: str, lang: str) -> tuple:
     host_valid = nickname_check(host)
     host_info = []
     if host_valid:
