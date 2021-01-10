@@ -170,13 +170,14 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
                 texts.append(text)
         link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
         if texts:
-            return f'<b>{localization_texts["feedbacks"][lang]["evaluations"]}:</b> {link}\n' + '\n\n'.join(texts)
+            return f'<b>{localization_texts["feedbacks"][lang]["evaluations"]}:</b> {link}\n' + \
+                   f'\n{"—" * 20}\n'.join(texts)
         return f'{link}\n{localization_texts["feedbacks"][lang]["not_eval"]}'
     else:
         return eval(user_info_localization['not_found'])
 
 
-async def get_host_info(host: str, lang: str) -> tuple:
+async def get_host_info(host: str, lang: str, avatar: bool) -> tuple:
     host_valid = nickname_check(host)
     host_info = []
     if host_valid:
@@ -197,7 +198,7 @@ async def get_host_info(host: str, lang: str) -> tuple:
         local_time = localization_texts['last_locations'][lang]['local_time']
         head = f'<b>{campus[0]} {host}</b>'
         status = '🟢 '
-        info = (await get_user_info(user, lang, True))[0]
+        info = (await get_user_info(user, lang, True, avatar))[0]
         info = info.splitlines()
         text = '\n'.join(info[1:-2])
         link = info[0].replace('🔴 ', '').replace('🟢 ', '')

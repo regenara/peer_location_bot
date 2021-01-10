@@ -17,7 +17,7 @@ from services.text_compile import get_host_info
 from services.utils import safe_split_text
 
 
-@dp.message_handler(text_startswith=['?'])
+@dp.message_handler(lambda message: message.text.startswith('?') and len(message.text) > 2)
 @dp.throttled(throttled, rate=3)
 async def intra_user_locations(message: Message):
     user_id = message.from_user.id
@@ -27,7 +27,7 @@ async def intra_user_locations(message: Message):
     await message.answer(text)
 
 
-@dp.message_handler(text_startswith=['!'])
+@dp.message_handler(lambda message: message.text.startswith('!') and len(message.text) > 2)
 @dp.throttled(throttled, rate=3)
 async def intra_user_feedbacks(message: Message):
     user_id = message.from_user.id
@@ -40,24 +40,25 @@ async def intra_user_feedbacks(message: Message):
         await message.answer(text, disable_web_page_preview=True)
 
 
-@dp.message_handler(text_startswith=['#'])
+@dp.message_handler(lambda message: message.text.startswith('#') and len(message.text) > 2)
 @dp.throttled(throttled, rate=3)
 async def host_info(message: Message):
     user_id = message.from_user.id
     host = message.text[1:].lower().strip()
     user_data = await mongo.find_tg_user(user_id)
     lang = user_data['settings']['lang']
+    avatar = user_data['settings']['avatar']
     friends = user_data['friends']
     notifications = user_data['notifications']
     text = localization_texts['wait'][lang]
     message_id = (await bot.send_message(user_id, text)).message_id
-    text, nickname = await get_host_info(host, lang)
+    text, nickname = await get_host_info(host, lang, avatar)
     keyboard = None
     if nickname:
         keyboard = intra_users_keyboard([nickname], friends, notifications)
     with suppress(MessageToDeleteNotFound):
         await bot.delete_message(user_id, message_id)
-    await message.answer(text, disable_web_page_preview=True, reply_markup=keyboard)
+    await message.answer(text, reply_markup=keyboard)
 
 
 @dp.message_handler(is_single_request=True)

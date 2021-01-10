@@ -23,7 +23,7 @@ def safe_split_text(text: str) -> list:
     while temp_text:
         if len(temp_text) > length:
             try:
-                split_pos = temp_text[:length].rindex('\n<b>')
+                split_pos = temp_text[:length].rindex(f'\n{"—" * 10}')
             except ValueError:
                 split_pos = length
             if split_pos < length // 4 * 3:
