@@ -17,7 +17,7 @@ def check_campus(info: dict) -> bool:
     return campus in campuses_ids
 
 
-async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple:
+async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple[str, str]:
     user_info_localization = localization_texts['user_info'][lang]
     nickname_valid = nickname_check(nickname)
     nickname = nickname.replace('@', '')
@@ -176,7 +176,7 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
         return eval(user_info_localization['not_found'])
 
 
-def get_host_info(host: str, lang: str) -> str:
+async def get_host_info(host: str, lang: str) -> tuple[str, str]:
     host_valid = nickname_check(host)
     host_info = []
     if host_valid:
@@ -187,7 +187,6 @@ def get_host_info(host: str, lang: str) -> str:
         last_use = host_info[0]
         user = last_use['user']['login']
         host = last_use['host']
-        link = f'<a href="https://profile.intra.42.fr/users/{user}">{user}</a>'
         campus_id = last_use['campus_id']
         campuses = intra_requests.get_campuses()
         campus = [(campus['name'], campus['time_zone']) for campus in campuses if campus['id'] == campus_id][0]
@@ -198,17 +197,21 @@ def get_host_info(host: str, lang: str) -> str:
         local_time = localization_texts['last_locations'][lang]['local_time']
         head = f'<b>{campus[0]} {host}</b>'
         status = '🟢 '
-        text = f'{head}\n{link}\n<i>{local_time}</i>'
+        info = (await get_user_info(user, lang, True))[0]
+        info = info.splitlines()
+        text = '\n'.join(info[1:-2])
+        link = info[0].replace('🔴 ', '').replace('🟢 ', '')
         if last_use['end_at'] is not None:
             status = '🔴 '
             end_at = last_use['end_at'].replace('Z', '+00:00')
             log_out_time = datetime.fromisoformat(end_at).astimezone(timezone(campus[1])).strftime(time_format)
-            text = f'{head}\n{localization_texts["host"][lang]["last_user"]}{link}\n<i>{local_time}</i>'
-        log_time = f'{log_in_time} - {log_out_time}'
+            link = f'{localization_texts["host"][lang]["last_user"]}\n{link}'
+            text = '\n'.join(info[1:])
+        log_time = f'<i>{local_time}</i>\n{log_in_time} - {log_out_time}'
         if log_in_time[7:] == log_out_time[7:]:
-            log_time = f'{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
-        return f'{status}{text}\n{log_time}'
-    return eval(localization_texts['host'][lang]['not_found'])
+            log_time = f'<i>{local_time}</i>\n{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
+        return f'{status}{head}\n{link}\n{log_time}\n{text}', user
+    return eval(localization_texts['host'][lang]['not_found']), ''
 
 
 def friends_list_normalization(message_text: str, friends: list, lang: str) -> str:

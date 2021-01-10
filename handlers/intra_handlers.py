@@ -45,13 +45,19 @@ async def intra_user_feedbacks(message: Message):
 async def host_info(message: Message):
     user_id = message.from_user.id
     host = message.text[1:].lower().strip()
-    lang = await mongo.get_lang(user_id)
+    user_data = await mongo.find_tg_user(user_id)
+    lang = user_data['settings']['lang']
+    friends = user_data['friends']
+    notifications = user_data['notifications']
     text = localization_texts['wait'][lang]
     message_id = (await bot.send_message(user_id, text)).message_id
-    text = get_host_info(host, lang)
+    text, nickname = await get_host_info(host, lang)
+    keyboard = None
+    if nickname:
+        keyboard = intra_users_keyboard([nickname], friends, notifications)
     with suppress(MessageToDeleteNotFound):
         await bot.delete_message(user_id, message_id)
-    await message.answer(text, disable_web_page_preview=True)
+    await message.answer(text, disable_web_page_preview=True, reply_markup=keyboard)
 
 
 @dp.message_handler(is_single_request=True)
