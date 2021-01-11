@@ -26,7 +26,7 @@ class Mongo:
 
     async def find_tg_user(self, user_id: int) -> dict:
         data = await self.tg_users.find_one({'user_id': user_id})
-        if data is None:
+        while data is None:
             await self.tg_db_fill(user_id)
             await asyncio.sleep(1)
             data = await self.tg_users.find_one({'user_id': user_id})
