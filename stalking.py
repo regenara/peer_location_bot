@@ -27,7 +27,8 @@ async def send_notifications():
                     if current_location is not None:
                         for user_id in stalkers:
                             lang = await mongo.get_lang(user_id)
-                            text = eval(localization_texts['in_campus'][lang])
+                            text = localization_texts['in_campus'][lang].format(nickname=nickname,
+                                                                                current_location=current_location)
                             with suppress(ChatNotFound, BotBlocked, UserDeactivated):
                                 await bot.send_message(user_id, text)
                             await asyncio.sleep(0.1)

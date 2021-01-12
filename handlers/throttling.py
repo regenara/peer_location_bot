@@ -7,5 +7,5 @@ async def throttled(*args, **kwargs):
     user_id = message.from_user.id
     lang = await mongo.get_lang(user_id)
     rate = kwargs['rate']
-    text = eval(localization_texts['antiflood'][lang])
+    text = localization_texts['antiflood'][lang].format(rate=rate)
     await message.reply(text)

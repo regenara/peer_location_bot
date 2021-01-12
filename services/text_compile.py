@@ -17,6 +17,24 @@ def check_campus(info: dict) -> bool:
     return campus in campuses_ids
 
 
+def get_status(info: dict) -> str:
+    cursus_users = info['cursus_users']
+    location = info['location']
+    cursus_42 = [(c['begin_at'], c['end_at']) for c in cursus_users
+                 if c['cursus']['name'] == '42cursus' and c['end_at'] is not None]
+    status = '🟢 '
+    if location is None:
+        status = '🔴 '
+    if cursus_42:
+        begin_at = datetime.fromisoformat(cursus_42[0][0].replace('Z', '+00:00')).timestamp()
+        end_at = datetime.fromisoformat(cursus_42[0][1].replace('Z', '+00:00')).timestamp()
+        if (end_at - begin_at) < (60 * 60 * 24 * 365):
+            status = '☠️ '
+    if info['staff?']:
+        status = '😎 '
+    return status
+
+
 async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool = False) -> tuple:
     user_info_localization = localization_texts['user_info'][lang]
     nickname_valid = nickname_check(nickname)
@@ -26,7 +44,7 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         info = intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
-    text = eval(user_info_localization['not_found'])
+    text = user_info_localization['not_found'].format(nickname=nickname.replace("<", "&lt"))
     login = ''
     if info and check_campus(info):
         coalition = intra_requests.get_user_coalition(nickname)
@@ -47,14 +65,14 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         campus = [campus['name'] for campus in info['campus'] if campus['id'] == primary_campus_id][0]
         image_url = info['image_url']
         location = info['location']
-        status = '🟢 '
         await mongo.find_intra_user(nickname, location)
+        status = get_status(info)
         if info['staff?']:
             location = user_info_localization['ask_adm']
-            status = ''
         if location is None:
             location = get_last_seen_time(nickname, user_info_localization)
-            status = '🔴 '
+        elif location != user_info_localization['ask_adm']:
+            location = f'<code>{location}</code>'
         link = f'<b>{displayname}</b>'
         if is_alone:
             link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{displayname}</a>'
@@ -70,7 +88,7 @@ def get_last_seen_time(nickname: str, user_info_localization: dict) -> str:
     last_location_info = intra_requests.get_last_locations(nickname)
     if not last_location_info:
         text = user_info_localization['not_on_campus']
-        return text[:text.index('.')].replace("f'", '')
+        return text[:text.index('.')]
     last_location_end = last_location_info[0]['end_at'].replace('Z', '+00:00')
     date = datetime.fromisoformat(last_location_end)
     now = datetime.now(timezone('UTC'))
@@ -92,9 +110,13 @@ def get_last_seen_time(nickname: str, user_info_localization: dict) -> str:
         minutes_gone = f'{str(minutes).zfill(2)}{user_info_localization["minutes"]} '
     if not days and not hours and not minutes:
         minutes_gone = user_info_localization['just_now']
-        text = eval(user_info_localization['not_on_campus'])
+        text = user_info_localization['not_on_campus'].format(days_gone=days_gone,
+                                                              hours_gone=hours_gone,
+                                                              minutes_gone=minutes_gone)
         return text[:text.rindex(' ')]
-    return eval(user_info_localization['not_on_campus'])
+    return user_info_localization['not_on_campus'].format(days_gone=days_gone,
+                                                          hours_gone=hours_gone,
+                                                          minutes_gone=minutes_gone)
 
 
 def get_last_locations(nickname: str, lang: str) -> str:
@@ -103,13 +125,16 @@ def get_last_locations(nickname: str, lang: str) -> str:
     local_time = last_location_localization[lang]['local_time']
     nickname_valid = nickname_check(nickname)
     last_locations = {}
-    status = '🔴 '
+    info = {}
     if nickname_valid:
         last_locations = intra_requests.get_last_locations(nickname)
+        info = intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
-    if isinstance(last_locations, list) and check_campus(intra_requests.get_user(nickname)):
+    if isinstance(last_locations, list) and info and check_campus(info):
         campuses = intra_requests.get_campuses()
+        status = get_status(info)
+        displayname = info['displayname']
         texts = [f'<i>{local_time}</i>']
         for i, location in enumerate(last_locations):
             campus = [(campus['name'], campus['time_zone']) for campus in campuses
@@ -126,14 +151,15 @@ def get_last_locations(nickname: str, lang: str) -> str:
             log_time = f'{log_in_time} - {log_out_time}'
             if log_in_time[7:] == log_out_time[7:]:
                 log_time = f'{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
-            text = f'<b>{campus[0]} {location["host"]}</b>\n{log_time}'
+            text = f'<b>{campus[0]}</b> <code>{location["host"]}</code>\n{log_time}'
             texts.append(text)
-        link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
+        link = f'<u><a href="https://profile.intra.42.fr/users/{nickname}">{displayname}</a></u> aka ' \
+               f'<code>{nickname}</code>'
         if len(texts) > 1:
             return f'{status}{link}\n' + '\n'.join(texts)
         return f'{status}{link}\n' + last_location_localization[lang]['not_logged']
     else:
-        return eval(user_info_localization['not_found'])
+        return user_info_localization['not_found'].format(nickname=nickname)
 
 
 async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> str:
@@ -141,12 +167,16 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
     user_info_localization = localization_texts['user_info'][lang]
     feedbacks_text = localization_texts['feedbacks'][lang]
     feedbacks = {}
+    info = {}
     if nickname_valid:
         feedbacks = intra_requests.get_feedbacks(nickname, results_count)
+        info = intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
-    if isinstance(feedbacks, list) and check_campus(intra_requests.get_user(nickname)):
+    if isinstance(feedbacks, list) and info and check_campus(info):
         texts = []
+        displayname = info['displayname']
+        status = get_status(info)
         for feedback in feedbacks:
             comment = feedback['comment']
             reverse_comment = feedback['feedback']
@@ -168,13 +198,13 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
                        f'</i>\n<b>{feedbacks_text["rating"]}:</b> {rating}/5\n<b>{feedbacks_text["final_mark"]}:' \
                        f'</b> {final_mark}'
                 texts.append(text)
-        link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
+        link = f'<u><a href="https://profile.intra.42.fr/users/{nickname}">{displayname}</a></u> aka ' \
+               f'<code>{nickname}</code>'
         if texts:
-            return f'<b>{localization_texts["feedbacks"][lang]["evaluations"]}:</b> {link}\n' + \
-                   f'\n{"—" * 20}\n'.join(texts)
-        return f'{link}\n{localization_texts["feedbacks"][lang]["not_eval"]}'
+            return f'{status}{link}\n' + f'\n{"—" * 20}\n'.join(texts)
+        return f'{status}{link}\n{localization_texts["feedbacks"][lang]["not_eval"]}'
     else:
-        return eval(user_info_localization['not_found'])
+        return user_info_localization['not_found'].format(nickname=nickname)
 
 
 async def get_host_info(host: str, lang: str, avatar: bool) -> tuple:
@@ -212,7 +242,7 @@ async def get_host_info(host: str, lang: str, avatar: bool) -> tuple:
         if log_in_time[7:] == log_out_time[7:]:
             log_time = f'<i>{local_time}</i>\n{log_in_time[:5]} - {log_out_time[:5]}  {log_in_time[7:]}'
         return f'{status}{head}\n{link}\n{log_time}\n{text}', user
-    return eval(localization_texts['host'][lang]['not_found']), ''
+    return localization_texts['host'][lang]['not_found'].format(host=host.replace("<", "&lt")), ''
 
 
 def friends_list_normalization(message_text: str, friends: list, lang: str) -> str:

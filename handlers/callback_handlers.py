@@ -75,7 +75,7 @@ async def switch_notification(callback_query: CallbackQuery):
         user_data = await mongo.find_tg_user(user_id)
         friends = user_data['friends']
         notifications = user_data['notifications']
-        alert_text = eval(localization_texts['notifications'][lang][switch])
+        alert_text = localization_texts['notifications'][lang][switch].format(nickname=nickname)
         await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
         keyboard = intra_users_keyboard(intra_users, friends, notifications)
         await bot.edit_message_reply_markup(user_id, message_id, reply_markup=keyboard)
@@ -96,7 +96,7 @@ async def friends_list(callback_query: CallbackQuery):
     friends = user_data['friends']
     notifications = user_data['notifications']
     text = friends_list_normalization(message_text, intra_users, lang)
-    alert_text = eval(localization_texts['friends_actions'][lang]['pull'])
+    alert_text = localization_texts['friends_actions'][lang]['pull'].format(nickname=nickname)
     await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
     keyboard = intra_users_keyboard(intra_users, friends, notifications)
     await bot.edit_message_text(text, user_id, message_id, reply_markup=keyboard)
@@ -119,7 +119,7 @@ async def friends_actions(callback_query: CallbackQuery):
         user_data = await mongo.find_tg_user(user_id)
         friends = user_data['friends']
         notifications = user_data['notifications']
-        alert_text = eval(localization_texts['friends_actions'][lang][action])
+        alert_text = localization_texts['friends_actions'][lang][action].format(nickname=nickname)
         await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
         keyboard = intra_users_keyboard(intra_users, friends, notifications)
         await bot.edit_message_reply_markup(user_id, message_id, reply_markup=keyboard)
