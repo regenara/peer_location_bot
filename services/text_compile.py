@@ -20,16 +20,13 @@ def check_campus(info: dict) -> bool:
 def get_status(info: dict) -> str:
     cursus_users = info['cursus_users']
     location = info['location']
-    cursus_42 = [(c['begin_at'], c['end_at']) for c in cursus_users
-                 if c['cursus']['name'] == '42cursus' and c['end_at'] is not None]
+    cursus_42 = [c for c in cursus_users if (c['cursus']['name'] == '42cursus' or c['cursus']['name'] == '42')
+                 and c['end_at'] is not None and c['level'] < 16]
     status = '🟢 '
     if location is None:
         status = '🔴 '
     if cursus_42:
-        begin_at = datetime.fromisoformat(cursus_42[0][0].replace('Z', '+00:00')).timestamp()
-        end_at = datetime.fromisoformat(cursus_42[0][1].replace('Z', '+00:00')).timestamp()
-        if (end_at - begin_at) < (60 * 60 * 24 * 365):
-            status = '☠️ '
+        status = '☠️ '
     if info['staff?']:
         status = '😎 '
     return status
@@ -41,13 +38,13 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
     nickname = nickname.replace('@', '')
     info = {}
     if nickname_valid:
-        info = intra_requests.get_user(nickname)
+        info = await intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     text = user_info_localization['not_found'].format(nickname=nickname.replace("<", "&lt"))
     login = ''
     if info and check_campus(info):
-        coalition = intra_requests.get_user_coalition(nickname)
+        coalition = await intra_requests.get_user_coalition(nickname)
         if coalition:
             coalition = f'\n<b>{user_info_localization["coalition"]}:</b> {coalition}'
         months = {'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
@@ -70,7 +67,7 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
         if info['staff?']:
             location = user_info_localization['ask_adm']
         if location is None:
-            location = get_last_seen_time(nickname, user_info_localization)
+            location = await get_last_seen_time(nickname, user_info_localization)
         elif location != user_info_localization['ask_adm']:
             location = f'<code>{location}</code>'
         link = f'<b>{displayname}</b>'
@@ -84,8 +81,8 @@ async def get_user_info(nickname: str, lang: str, is_alone: bool, avatar: bool =
     return text, login
 
 
-def get_last_seen_time(nickname: str, user_info_localization: dict) -> str:
-    last_location_info = intra_requests.get_last_locations(nickname)
+async def get_last_seen_time(nickname: str, user_info_localization: dict) -> str:
+    last_location_info = await intra_requests.get_last_locations(nickname)
     if not last_location_info:
         text = user_info_localization['not_on_campus']
         return text[:text.index('.')]
@@ -119,7 +116,7 @@ def get_last_seen_time(nickname: str, user_info_localization: dict) -> str:
                                                           minutes_gone=minutes_gone)
 
 
-def get_last_locations(nickname: str, lang: str) -> str:
+async def get_last_locations(nickname: str, lang: str) -> str:
     user_info_localization = localization_texts['user_info'][lang]
     last_location_localization = localization_texts['last_locations']
     local_time = last_location_localization[lang]['local_time']
@@ -127,12 +124,12 @@ def get_last_locations(nickname: str, lang: str) -> str:
     last_locations = {}
     info = {}
     if nickname_valid:
-        last_locations = intra_requests.get_last_locations(nickname)
-        info = intra_requests.get_user(nickname)
+        last_locations = await intra_requests.get_last_locations(nickname)
+        info = await intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     if isinstance(last_locations, list) and info and check_campus(info):
-        campuses = intra_requests.get_campuses()
+        campuses = await intra_requests.get_campuses()
         status = get_status(info)
         displayname = info['displayname']
         texts = [f'<i>{local_time}</i>']
@@ -169,8 +166,8 @@ async def get_user_feedbacks(nickname: str, lang: str, results_count: int) -> st
     feedbacks = {}
     info = {}
     if nickname_valid:
-        feedbacks = intra_requests.get_feedbacks(nickname, results_count)
-        info = intra_requests.get_user(nickname)
+        feedbacks = await intra_requests.get_feedbacks(nickname, results_count)
+        info = await intra_requests.get_user(nickname)
     elif len(nickname) > 20:
         nickname = f'{nickname[:20]}...'
     if isinstance(feedbacks, list) and info and check_campus(info):
@@ -211,7 +208,7 @@ async def get_host_info(host: str, lang: str, avatar: bool) -> tuple:
     host_valid = nickname_check(host)
     host_info = []
     if host_valid:
-        host_info = intra_requests.get_host(host)
+        host_info = await intra_requests.get_host(host)
     elif len(host) > 20:
         host = f'{host[:20]}...'
     if host_info and host_info[0]['campus_id'] in (23, 17):
@@ -219,7 +216,7 @@ async def get_host_info(host: str, lang: str, avatar: bool) -> tuple:
         user = last_use['user']['login']
         host = last_use['host']
         campus_id = last_use['campus_id']
-        campuses = intra_requests.get_campuses()
+        campuses = await intra_requests.get_campuses()
         campus = [(campus['name'], campus['time_zone']) for campus in campuses if campus['id'] == campus_id][0]
         time_format = '%H:%M  %d.%m.%y'
         begin_at = last_use['begin_at'].replace('Z', '+00:00')

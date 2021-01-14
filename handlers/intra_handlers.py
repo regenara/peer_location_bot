@@ -23,7 +23,7 @@ async def intra_user_locations(message: Message):
     user_id = message.from_user.id
     nickname = message.text[1:].lower().strip().replace('@', '')
     lang = await mongo.get_lang(user_id)
-    text = get_last_locations(nickname, lang)
+    text = await get_last_locations(nickname, lang)
     await message.answer(text)
 
 
