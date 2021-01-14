@@ -20,7 +20,7 @@ async def send_notifications():
             location = document['location']
             stalkers = document['stalkers']
             if stalkers:
-                info = intra_requests.get_user(nickname)
+                info = await intra_requests.get_user(nickname)
                 current_location = info['location']
                 if current_location != location:
                     await mongo.update_intra_user(nickname, {'$set': {'location': current_location}})

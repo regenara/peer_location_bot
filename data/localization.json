@@ -36,7 +36,7 @@
                              "pull": "Removed from friends: {nickname}",
                              "count": "You can't add more than 20 users as friends"}},
   "wait": {"ru": "Один момент...", "en": "One moment..."},
-  "in_campus": {"ru": "<b>{nickname}</b> в кампусе!\n<b>{current_location}</b>", "en": "<b>{nickname}</b> is on campus!\n<b>{current_location}</b>"},
+  "in_campus": {"ru": "<code>{nickname}</code> в кампусе!\n<code>{current_location}</code>", "en": "<code>{nickname}</code> is on campus!\n<code>{current_location}</code>"},
   "feedbacks": {"ru": {"mark": "Оценка", "rating": "Рейтинг", "final_mark": "Итоговая оценка", "not_eval": "Пользователь еще никого не оценивал"},
                 "en": {"mark": "Mark", "rating": "Rating", "final_mark": "Final mark", "not_eval": "The user has not evaluated anyone yet"}},
   "menu": {"ru": {"friends": "\u200BДрузья \uD83E\uDD1D", "settings": "\u200BНастройки \uD83D\uDEE0", "help": "\u200BПомощь \uD83D\uDCAC", "about": "\u200BИсходники ⚙", "donate": "\u200BДонаты ☕"},
