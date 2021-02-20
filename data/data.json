@@ -1,12 +1,14 @@
 {
     "clients": [
-        ["client_id", "client_secret"],
-        ["client_id", "client_secret"],
-        ["client_id", "client_secret"],
-        ["client_id", "client_secret"],
-        ["client_id", "client_secret"]
+        {"client_id": "", "client_secret": ""},
+        {"client_id": "", "client_secret": ""},
+        {"client_id": "", "client_secret": ""},
+        {"client_id": "", "client_secret": ""},
+        {"client_id": "", "client_secret": ""}
     ],
     "api_token": "",
     "mongo_username": "",
-    "mongo_password": ""
+    "mongo_password": "",
+    "redirect_uri": "",
+    "admin":
 }

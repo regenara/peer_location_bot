@@ -3,25 +3,20 @@ import logging
 from aiogram import Bot
 from aiogram import Dispatcher
 from aiogram import types
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.contrib.fsm_storage.redis import RedisStorage
 
-from data.config import api_token
-from data.config import clients
-from data.config import mongo_username
-from data.config import mongo_password
-from services import filters
+from data.config import API_TOKEN
+from data.config import CLIENTS
+from data.config import MONGO_PASSWORD
+from data.config import MONGO_USERNAME
 from services.intra_requests import IntraRequests
 from services.mongo import Mongo
 
-bot = Bot(token=api_token, parse_mode=types.ParseMode.HTML)
-storage = MemoryStorage()
+bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.HTML)
+storage = RedisStorage('localhost', 6379, db=5)
 dp = Dispatcher(bot, storage=storage)
 
-for custom_filter in (filters.IsNoFriends, filters.IsAloneFriend, filters.IsFriends, filters.IsSettings, filters.IsHelp,
-                      filters.IsSingleRequest, filters.IsAbout, filters.IsDonate, filters.IsFriendsList,
-                      filters.IsMailing):
-    dp.filters_factory.bind(custom_filter)
 
 logging.basicConfig(level=logging.INFO)
-intra_requests = IntraRequests(clients)
-mongo = Mongo(mongo_username, mongo_password)
+intra_requests = IntraRequests(CLIENTS)
+mongo = Mongo(MONGO_USERNAME, MONGO_PASSWORD)

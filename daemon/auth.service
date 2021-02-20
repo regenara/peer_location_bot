@@ -1,0 +1,13 @@
+[Unit]
+Description=peer_location_bot
+After=network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/home/ubuntu/peer_location_bot
+Restart=always
+RestartSec=3
+ExecStart=/usr/bin/screen -L -dmS auth_peer_location_bot /home/ubuntu/peer_location_bot/venv/bin/python3 /home/ubuntu/peer_location_bot/auth.py
+
+[Install]
+WantedBy=multi-user.target

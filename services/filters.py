@@ -1,77 +1,85 @@
+from datetime import datetime
+from pytz import timezone
+
 from aiogram.dispatcher.filters.filters import BoundFilter
 from aiogram.types import CallbackQuery
 from aiogram.types import Message
 
-from data.config import localization_texts
-import misc
+from data.config import ADMIN
+from data.config import LOCALIZATION_TEXTS
+from misc import dp
+from misc import mongo
+from models.user import User
+from services.states import States
 
 
-class IsNoFriends(BoundFilter):
-    key = 'is_no_friends'
+class IsStart(BoundFilter):
+    key = 'is_start'
 
-    def __init__(self, is_no_friends):
-        self.is_no_friends = is_no_friends
+    def __init__(self, is_start):
+        self.is_start = is_start
 
-    async def check(self, message: Message) -> bool:
+    async def check(self, message: Message) -> dict:
         user_id = message.from_user.id
-        user_data = await misc.mongo.find_tg_user(user_id)
-        friends = user_data['friends']
+        username = message.from_user.username
         text = message.text
-        menu = localization_texts['menu']
-        menu_texts = [menu[key]['friends'] for key in menu]
-        return (text == '/friends' or text in menu_texts) and not friends
+        menu = LOCALIZATION_TEXTS['menu']
+        menu_texts = [menu[key]['settings'] for key in menu]
+        data = await mongo.find('users', {'user_id': user_id})
+        if not data:
+            user_data = {'user': None}
+        else:
+            user = User.from_dict(data)
+            if user.username != username:
+                await mongo.update('users', {'user_id': user_id}, 'set', {'username': username})
+            if not user.nickname:
+                user_data = {'user': None}
+            else:
+                user_data = {'user': user}
+        if text == '/start' or text in menu_texts or not user_data['user']:
+            return user_data
 
 
-class IsAloneFriend(BoundFilter):
-    key = 'is_alone_friend'
+class IsMailing(BoundFilter):
+    key = 'is_mailing'
 
-    def __init__(self, is_alone_friend):
-        self.is_alone_friend = is_alone_friend
+    def __init__(self, is_mailing):
+        self.is_mailing = is_mailing
 
     async def check(self, message: Message) -> bool:
+        if message.text == '$' and message.from_user.id == ADMIN:
+            await dp.current_state(user=ADMIN).set_state(States.MAILING)
+            return True
+
+
+class IsIntrovert(BoundFilter):
+    key = 'is_introvert'
+
+    def __init__(self, is_introvert):
+        self.is_introvert = is_introvert
+
+    async def check(self, message: Message) -> dict:
         user_id = message.from_user.id
-        count = await misc.mongo.get_count(user_id, 'friends')
         text = message.text
-        menu = localization_texts['menu']
+        menu = LOCALIZATION_TEXTS['menu']
         menu_texts = [menu[key]['friends'] for key in menu]
-        return (text == '/friends' or text in menu_texts) and count == 1
+        data = await mongo.find('users', {'user_id': user_id})
+        user = User.from_dict(data)
+        if text == '/friends' or text in menu_texts and user.friends_count < 2:
+            return {'user': user}
 
 
-class IsFriends(BoundFilter):
-    key = 'is_friends'
+class IsExtrovert(BoundFilter):
+    key = 'is_extrovert'
 
-    def __init__(self, is_friends):
-        self.is_friends = is_friends
+    def __init__(self, is_extrovert):
+        self.is_extrovert = is_extrovert
 
     async def check(self, message: Message) -> bool:
         text = message.text
-        menu = localization_texts['menu']
+        menu = LOCALIZATION_TEXTS['menu']
         menu_texts = [menu[key]['friends'] for key in menu]
         return text == '/friends' or text in menu_texts
-
-
-class IsSingleRequest(BoundFilter):
-    key = 'is_single_request'
-
-    def __init__(self, is_single_request):
-        self.is_single_request = is_single_request
-
-    async def check(self, message: Message) -> bool:
-        text = message.text
-        return len(text.split()) < 2
-
-
-class IsSettings(BoundFilter):
-    key = 'is_settings'
-
-    def __init__(self, is_settings):
-        self.is_settings = is_settings
-
-    async def check(self, message: Message) -> bool:
-        text = message.text
-        menu = localization_texts['menu']
-        menu_texts = [menu[key]['settings'] for key in menu]
-        return text == '/start' or text in menu_texts
 
 
 class IsHelp(BoundFilter):
@@ -82,7 +90,7 @@ class IsHelp(BoundFilter):
 
     async def check(self, message: Message) -> bool:
         text = message.text
-        menu = localization_texts['menu']
+        menu = LOCALIZATION_TEXTS['menu']
         menu_texts = [menu[key]['help'] for key in menu]
         return text == '/help' or text in menu_texts
 
@@ -95,7 +103,7 @@ class IsAbout(BoundFilter):
 
     async def check(self, message: Message) -> bool:
         text = message.text
-        menu = localization_texts['menu']
+        menu = LOCALIZATION_TEXTS['menu']
         menu_texts = [menu[key]['about'] for key in menu]
         return text == '/about' or text in menu_texts
 
@@ -108,30 +116,62 @@ class IsDonate(BoundFilter):
 
     async def check(self, message: Message) -> bool:
         text = message.text
-        menu = localization_texts['menu']
+        menu = LOCALIZATION_TEXTS['menu']
         menu_texts = [menu[key]['donate'] for key in menu]
         return text == '/donate' or text in menu_texts
 
 
-class IsFriendsList(BoundFilter):
-    key = 'is_friends_list'
+class IsLocations(BoundFilter):
+    key = 'is_locations'
 
-    def __init__(self, is_friends_list):
-        self.is_friends_lists = is_friends_list
+    def __init__(self, is_locations):
+        self.is_locations = is_locations
 
-    async def check(self, callback_query: CallbackQuery) -> bool:
+    async def check(self, message: Message) -> bool:
+        text = message.text
+        menu = LOCALIZATION_TEXTS['menu']
+        menu_texts = [menu[key]['locations'] for key in menu]
+        return text == '/locations' or text in menu_texts
+
+
+class IsProjects(BoundFilter):
+    key = 'is_projects'
+
+    def __init__(self, is_projects):
+        self.is_projects = is_projects
+
+    async def check(self, message: Message) -> bool:
+        text = message.text
+        menu = LOCALIZATION_TEXTS['menu']
+        menu_texts = [menu[key]['projects'] for key in menu]
+        return text == '/projects' or text in menu_texts
+
+
+class IsLocationsRenewal(BoundFilter):
+    key = 'is_locations_renewal'
+
+    def __init__(self, is_locations_renewal):
+        self.is_locations_renewal = is_locations_renewal
+
+    async def check(self, callback_query: CallbackQuery):
+        user_id = callback_query.from_user.id
+        data = callback_query.data.split('=')
+        if data[0] == 'free_locations' \
+                and len(data) == 2 and datetime.now(timezone('UTC')).timestamp() - int(data[1]) > 180:
+            await dp.current_state(user=user_id).set_state(States.THROTTLER)
+            return True
+
+
+class IsRemoveFriend(BoundFilter):
+    key = 'is_remove_friend'
+
+    def __init__(self, is_remove_friend):
+        self.is_remove_friend = is_remove_friend
+
+    async def check(self, callback_query: CallbackQuery):
         user_id = callback_query.from_user.id
         message_text = callback_query.message.text
         remove = callback_query.data.split('=')[0] == 'pull'
-        lang = await misc.mongo.get_lang(user_id)
-        return message_text[:message_text.index('\n')] == localization_texts['friends'][lang]['list'] and remove
-
-
-class IsMailing(BoundFilter):
-    key = 'is_mailing'
-
-    def __init__(self, is_mailing):
-        self.is_mailing = is_mailing
-
-    async def check(self, message: Message) -> bool:
-        return message.text.startswith('$ ') and message.from_user.id == 373749366 and len(message.text) > 10
+        data = await mongo.find('users', {'user_id': user_id})
+        user = User.from_dict(data)
+        return message_text.split('\n')[0] == LOCALIZATION_TEXTS['friends'][user.lang]['list'] and remove

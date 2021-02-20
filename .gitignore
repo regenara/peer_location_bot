@@ -4,3 +4,5 @@ data/data.json
 .idea
 __pycache__
 data/data2.json
+trash
+tests.py

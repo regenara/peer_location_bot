@@ -3,123 +3,122 @@ from contextlib import suppress
 from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import MessageToDeleteNotFound
 
-from misc import bot
+from data.config import LOCALIZATION_TEXTS
 from misc import dp
 from misc import mongo
-from data.config import localization_texts
-from services.keyboards import avatar_keyboard
-from services.keyboards import results_count_keyboard
-from services.keyboards import intra_users_keyboard
+from models.user import User
 from services.keyboards import menu_keyboard
-from services.text_compile import friends_list_normalization
+from services.keyboards import peer_keyboard
+from services.keyboards import settings_keyboard
+from utils.helpers import friends_list_normalization
+from utils.helpers import keyboard_normalize
 
 
-@dp.callback_query_handler(lambda callback: callback.data in ('ru', 'en'))
-async def intra_user_avatar(callback_query: CallbackQuery):
+@dp.callback_query_handler(lambda callback: callback.data in ('ru', 'en'), state='*')
+async def peer_avatar(callback_query: CallbackQuery):
     new_lang = callback_query.data
     user_id = callback_query.from_user.id
-    message_id = callback_query.message.message_id
-    await mongo.update_tg_user(user_id, {'$set': {'settings.lang': new_lang}})
-    await bot.answer_callback_query(callback_query.id)
-    text = localization_texts['avatar'][new_lang]
-    yes_or_no = localization_texts['yes_or_no'][new_lang]
-    yes, no = yes_or_no['yes'], yes_or_no['no']
-    await bot.edit_message_text(text, user_id, message_id, reply_markup=avatar_keyboard(yes, no))
+    await mongo.update('users', {'user_id': user_id}, 'set', {'settings.lang': new_lang})
+    await callback_query.answer()
+    text = LOCALIZATION_TEXTS['avatar'][new_lang]
+    yes = LOCALIZATION_TEXTS['yes_or_no'][new_lang]['yes']
+    no = LOCALIZATION_TEXTS['yes_or_no'][new_lang]['no']
+    await callback_query.answer()
+    await callback_query.message.edit_text(text, reply_markup=settings_keyboard('avatar', yes, no))
 
 
-@dp.callback_query_handler(lambda callback: callback.data in ('yes', 'no'))
-async def feedbacks_count(callback_query: CallbackQuery):
-    yes_or_no = callback_query.data == 'yes'
+@dp.callback_query_handler(lambda callback: callback.data in ('yes_avatar', 'no_avatar'), state='*')
+async def save_settings(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    message_id = callback_query.message.message_id
-    lang = await mongo.get_lang(user_id)
-    await mongo.update_tg_user(user_id, {'$set': {'settings.avatar': yes_or_no}})
-    await bot.answer_callback_query(callback_query.id)
-    text = localization_texts['results_count'][lang]
-    await bot.edit_message_text(text, user_id, message_id, reply_markup=results_count_keyboard())
+    yes_or_no = callback_query.data == 'yes_avatar'
+    data = await mongo.update('users', {'user_id': user_id}, 'set', {'settings.avatar': yes_or_no})
+    user = User.from_dict(data)
+    await callback_query.answer()
+    if callback_query.from_user.username:
+        text = LOCALIZATION_TEXTS['anon'][user.lang]
+        yes = LOCALIZATION_TEXTS['yes_or_no'][user.lang]['yes']
+        no = LOCALIZATION_TEXTS['yes_or_no'][user.lang]['no']
+        await callback_query.answer()
+        await callback_query.message.edit_text(text, reply_markup=settings_keyboard('anon', yes, no))
+    else:
+        text = LOCALIZATION_TEXTS['saving_settings'][user.lang]
+        text += LOCALIZATION_TEXTS['help'][user.lang]
+        await callback_query.answer()
+        with suppress(MessageToDeleteNotFound):
+            await callback_query.message.delete()
+        await callback_query.message.answer(text, reply_markup=menu_keyboard(user.lang))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.isdigit())
-async def saving_settings(callback_query: CallbackQuery):
-    results_count = int(callback_query.data)
+@dp.callback_query_handler(lambda callback: callback.data in ('yes_anon', 'no_anon'), state='*')
+async def anon_settings(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    message_id = callback_query.message.message_id
-    lang = await mongo.get_lang(user_id)
-    await mongo.update_tg_user(user_id, {'$set': {'settings.results_count': results_count}})
-    await bot.answer_callback_query(callback_query.id)
-    text = localization_texts['saving_settings'][lang]
-    text += localization_texts["help"][lang]
+    yes_or_no = callback_query.data == 'no_anon'
+    data = await mongo.update('users', {'user_id': user_id}, 'set', {'settings.anon': yes_or_no})
+    user = User.from_dict(data)
+    text = LOCALIZATION_TEXTS['saving_settings'][user.lang]
+    text += LOCALIZATION_TEXTS['help'][user.lang]
+    await callback_query.answer()
     with suppress(MessageToDeleteNotFound):
-        await bot.delete_message(user_id, message_id)
-    await bot.send_message(user_id, text, reply_markup=menu_keyboard(lang))
+        await callback_query.message.delete()
+    await callback_query.message.answer(text, reply_markup=menu_keyboard(user.lang))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('on', 'off'))
+@dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('on', 'off'), state='*')
 async def switch_notification(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    message_id = callback_query.message.message_id
     switch, nickname = callback_query.data.split('=')
-    action = 'pull'
+    operator = 'pull'
     if switch == 'on':
-        action = 'addToSet'
+        operator = 'addToSet'
     buttons = callback_query.message.reply_markup.inline_keyboard
-    count = await mongo.get_count(user_id, 'notifications')
-    lang = await mongo.get_lang(user_id)
-    if action == 'addToSet' and count == 10:
-        alert_text = localization_texts['notifications'][lang]['count']
-        await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
+    data = await mongo.find('users', {'user_id': user_id})
+    user = User.from_dict(data)
+    if operator == 'addToSet' and user.notifications_count == 10:
+        alert_text = LOCALIZATION_TEXTS['notifications'][user.lang]['count']
+        await callback_query.answer(alert_text, show_alert=True)
     else:
-        intra_users = [button.callback_data.split('=')[1] for row in buttons for button in row][::2]
-        await mongo.update_tg_user(user_id, {f'${action}': {'notifications': nickname}})
-        await mongo.update_intra_user(nickname, {f'${action}': {'stalkers': user_id}})
-        user_data = await mongo.find_tg_user(user_id)
-        friends = user_data['friends']
-        notifications = user_data['notifications']
-        alert_text = localization_texts['notifications'][lang][switch].format(nickname=nickname)
-        await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
-        keyboard = intra_users_keyboard(intra_users, friends, notifications)
-        await bot.edit_message_reply_markup(user_id, message_id, reply_markup=keyboard)
+        data = await mongo.update('users', {'user_id': user_id}, operator,
+                                  {'notifications': nickname}, return_document=True)
+        await mongo.update('peers', {'nickname': nickname}, operator, {'stalkers': user_id}, upsert=True)
+        user = User.from_dict(data)
+        alert_text = LOCALIZATION_TEXTS['notifications'][user.lang][switch].format(nickname=nickname)
+        await callback_query.answer(alert_text, show_alert=True)
+        await callback_query.message.edit_reply_markup(keyboard_normalize(buttons, user.friends, user.notifications))
 
 
-@dp.callback_query_handler(is_friends_list=True)
+@dp.callback_query_handler(is_remove_friend=True, state='*')
 async def friends_list(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    message_id = callback_query.message.message_id
     nickname = callback_query.data.split('=')[1]
     buttons = callback_query.message.reply_markup.inline_keyboard
-    lang = await mongo.get_lang(user_id)
     message_text = callback_query.message.text
-    get_intra_users = [button.callback_data.split('=')[1] for row in buttons for button in row][::2]
-    intra_users = [intra_user for intra_user in get_intra_users if intra_user != nickname]
-    await mongo.update_tg_user(user_id, {f'$pull': {'friends': nickname}})
-    user_data = await mongo.find_tg_user(user_id)
-    friends = user_data['friends']
-    notifications = user_data['notifications']
-    text = friends_list_normalization(message_text, intra_users, lang)
-    alert_text = localization_texts['friends_actions'][lang]['pull'].format(nickname=nickname)
-    await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
-    keyboard = intra_users_keyboard(intra_users, friends, notifications)
-    await bot.edit_message_text(text, user_id, message_id, reply_markup=keyboard)
+    get_friends = [button.callback_data.split('=')[1] for row in buttons for button in row][::2]
+    friends = [friend for friend in get_friends if friend != nickname]
+    data = await mongo.update('users', {'user_id': user_id}, 'pull',
+                              {'friends': nickname}, return_document=True)
+    user = User.from_dict(data)
+    text = friends_list_normalization(message_text, friends)
+    if not text:
+        text = LOCALIZATION_TEXTS['friends'][user.lang]['no_friends']
+    alert_text = LOCALIZATION_TEXTS['friends_actions'][user.lang]['pull'].format(nickname=nickname)
+    await callback_query.answer(alert_text, show_alert=True)
+    await callback_query.message.edit_text(text, reply_markup=peer_keyboard(friends, user.friends, user.notifications))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('addToSet', 'pull'))
+@dp.callback_query_handler(lambda callback: callback.data.split('=')[0] in ('addToSet', 'pull'), state='*')
 async def friends_actions(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    message_id = callback_query.message.message_id
-    action, nickname = callback_query.data.split('=')
+    operator, nickname = callback_query.data.split('=')
     buttons = callback_query.message.reply_markup.inline_keyboard
-    count = await mongo.get_count(user_id, 'friends')
-    lang = await mongo.get_lang(user_id)
-    if action == 'addToSet' and count == 20:
-        alert_text = localization_texts['friends_actions'][lang]['count']
-        await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
+    data = await mongo.find('users', {'user_id': user_id})
+    user = User.from_dict(data)
+    if operator == 'addToSet' and user.friends_count == 20:
+        alert_text = LOCALIZATION_TEXTS['friends_actions'][user.lang]['count']
+        await callback_query.answer(alert_text, show_alert=True)
     else:
-        intra_users = [button.callback_data.split('=')[1] for row in buttons for button in row][::2]
-        await mongo.update_tg_user(user_id, {f'${action}': {'friends': nickname}})
-        user_data = await mongo.find_tg_user(user_id)
-        friends = user_data['friends']
-        notifications = user_data['notifications']
-        alert_text = localization_texts['friends_actions'][lang][action].format(nickname=nickname)
-        await bot.answer_callback_query(callback_query.id, alert_text, show_alert=True)
-        keyboard = intra_users_keyboard(intra_users, friends, notifications)
-        await bot.edit_message_reply_markup(user_id, message_id, reply_markup=keyboard)
+        data = await mongo.update('users', {'user_id': user_id}, operator,
+                                  {'friends': nickname}, return_document=True)
+        user = User.from_dict(data)
+        alert_text = LOCALIZATION_TEXTS['friends_actions'][user.lang][operator].format(nickname=nickname)
+        await callback_query.answer(alert_text, show_alert=True)
+        await callback_query.message.edit_reply_markup(keyboard_normalize(buttons, user.friends, user.notifications))
