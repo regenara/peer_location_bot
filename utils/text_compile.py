@@ -20,7 +20,7 @@ from utils.helpers import get_utc
 
 
 async def peer_data_compile(nickname: str, peer_data_locale: dict,
-                            is_alone: bool, avatar: bool = False) -> dict[str, Any]:
+                            is_alone: bool, avatar: bool = False) -> Dict[str, Any]:
     peer_data = await intra_requests.get_peer(nickname)
     if peer_data.get('error') and '404' in peer_data['error']:
         return {'text': peer_data_locale['not_found'].format(nickname=nickname.replace("<", "&lt")),

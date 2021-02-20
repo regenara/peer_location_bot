@@ -3,7 +3,7 @@ from os import path
 from utils.json import read_json
 
 
-config = read_json(path.join('data', 'data2.json'))
+config = read_json(path.join('data', 'data.json'))
 API_TOKEN = config['api_token']
 ADMIN = config['admin']
 CLIENTS = config['clients']
