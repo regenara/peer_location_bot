@@ -42,6 +42,8 @@ async def send_notifications():
                                 await mongo.delete('users', {'user_id': user_id})
                             except ChatNotFound:
                                 pass
+                        else:
+                            await mongo.update('peers', {'nickname': peer_db.nickname}, 'pull', {'stalkers': user_id})
         collections = await cursor.to_list(length=100)
     await intra_requests.session.close()
     await bot.session.close()
