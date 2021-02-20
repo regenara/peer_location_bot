@@ -10,5 +10,5 @@
     "mongo_username": "",
     "mongo_password": "",
     "redirect_uri": "",
-    "admin":
+    "admin": 0
 }
