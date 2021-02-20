@@ -2,6 +2,8 @@ from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
 from time import time
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Union
 from urllib.parse import urljoin
@@ -186,7 +188,7 @@ class IntraRequests:
         endpoint = f'projects/{project_id}'
         return await self.request(endpoint)
 
-    async def get_project_peers(self, project_id: int, campus_id: int, time_zone: str):
+    async def get_project_peers(self, project_id: int, campus_id: int, time_zone: str) -> Dict[str, Any]:
         """
 
         :param project_id: ID проекта
@@ -215,7 +217,7 @@ class IntraRequests:
         result.update({'data': data})
         return result
 
-    async def get_projects(self, cursus_id: int = 21):
+    async def get_projects(self, cursus_id: int = 21) -> List[dict]:
         """
 
         :param cursus_id: ID курса, по умолчанию 21 == 42cursus
@@ -257,7 +259,7 @@ class IntraRequests:
             stop += 100
         return projects
 
-    async def get_campus_locations(self, campus_id: int, past: str, now: str, pages: int):
+    async def get_campus_locations(self, campus_id: int, past: str, now: str, pages: int) -> Dict[str, Any]:
         """
 
         :param campus_id: ID кампуса

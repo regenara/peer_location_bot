@@ -41,14 +41,13 @@ class Auth:
                 data = await mongo.update('users', {'user_id': user_id}, 'set',
                                           {'nickname': peer.nickname, 'intra_id': peer.intra_id,
                                            'campus': peer.campus, 'campus_id': peer.campus_id,
-                                           'time_zone': peer.time_zone},
-                                          upsert=True, return_document=True)
+                                           'time_zone': peer.time_zone}, upsert=True, return_document=True)
                 user = await bot.get_chat(user_id)
                 await mongo.update('peers', {'nickname': peer.nickname},
                                    'set', {'nickname': peer.nickname, 'intra_id': peer.intra_id,
                                            'campus': peer.campus, 'campus_id': peer.campus_id,
-                                           'time_zone': peer.time_zone,
-                                           'username': user.username, 'user_id': user.id}, upsert=True)
+                                           'time_zone': peer.time_zone, 'username': user.username,
+                                           'user_id': user.id}, upsert=True)
                 lang = data.get('settings', {}).get('lang') or 'en'
                 text = LOCALIZATION_TEXTS['language'][lang].format(nickname=peer.nickname)
                 with suppress(MessageToDeleteNotFound):

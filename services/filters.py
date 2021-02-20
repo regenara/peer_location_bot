@@ -153,7 +153,7 @@ class IsLocationsRenewal(BoundFilter):
     def __init__(self, is_locations_renewal):
         self.is_locations_renewal = is_locations_renewal
 
-    async def check(self, callback_query: CallbackQuery):
+    async def check(self, callback_query: CallbackQuery) -> bool:
         user_id = callback_query.from_user.id
         data = callback_query.data.split('=')
         if data[0] == 'free_locations' \
@@ -168,7 +168,7 @@ class IsRemoveFriend(BoundFilter):
     def __init__(self, is_remove_friend):
         self.is_remove_friend = is_remove_friend
 
-    async def check(self, callback_query: CallbackQuery):
+    async def check(self, callback_query: CallbackQuery) -> bool:
         user_id = callback_query.from_user.id
         message_text = callback_query.message.text
         remove = callback_query.data.split('=')[0] == 'pull'
