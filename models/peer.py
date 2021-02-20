@@ -68,18 +68,13 @@ class Peer:
                     status = '🟢 '
         if is_staff:
             status = '😎 '
-        if len(cursus_data) == 1:
-            cursus = cursus_data[0]
-            if get_utc(cursus['end_at']) - get_utc(cursus['begin_at']) < 2246400.0:
-                status = '☠️ '
-        else:
-            for cursus in cursus_data:
-                now = datetime.now().timestamp()
-                if cursus['cursus']['name'] == '42cursus':
-                    end_at = get_utc(cursus['end_at'])
-                    if end_at and end_at < now and cursus['level'] < 16:
-                        status = '☠️ '
-                    break
+        for cursus in cursus_data:
+            now = datetime.now().timestamp()
+            if cursus['cursus']['name'] == '42cursus':
+                end_at = get_utc(cursus['end_at'])
+                if end_at and end_at < now and cursus['level'] < 16:
+                    status = '☠️ '
+                break
         coalition = ''
         peer_coalitions = await intra_requests.get_peer_coalitions(nickname)
         if peer_coalitions:
