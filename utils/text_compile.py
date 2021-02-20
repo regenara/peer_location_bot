@@ -199,14 +199,18 @@ async def peer_feedbacks_compile(nickname: str, peer_feedbacks_locale: dict,
         if not feedbacks_data:
             return {'text': title + peer_feedbacks_locale['not_eval'], 'count': 0}
         for feedback in feedbacks_data:
-            feedbacks.append(await Feedback.from_dict(feedback))
+            feedback_data = await Feedback.from_dict(feedback)
+            if feedback_data:
+                feedbacks.append(feedback_data)
         count = len(feedbacks)
         data = []
         for feedback in feedbacks[5:]:
-            data.append({'corrector_comment': feedback.corrector_comment, 'mark': feedback.mark, 'team': feedback.team,
-                         'project': feedback.project, 'peer_nickname': feedback.peer_nickname,
-                         'peer_link': feedback.peer_link, 'peer_comment': feedback.peer_comment,
-                         'rating': feedback.rating, 'final_mark': feedback.final_mark})
+            if feedback:
+                data.append(
+                    {'corrector_comment': feedback.corrector_comment, 'mark': feedback.mark, 'team': feedback.team,
+                     'project': feedback.project, 'peer_nickname': feedback.peer_nickname,
+                     'peer_link': feedback.peer_link, 'peer_comment': feedback.peer_comment,
+                     'rating': feedback.rating, 'final_mark': feedback.final_mark})
         if data:
             await mongo.update('peers', {'nickname': peer.nickname}, 'set', {'feedbacks': data}, upsert=True)
         feedbacks = feedbacks[:5]

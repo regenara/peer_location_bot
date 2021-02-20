@@ -27,7 +27,8 @@ async def projects_pagination(callback_query: CallbackQuery):
     user = User.from_dict(data)
     keyboard = await projects_keyboard(int(page), 26)
     await callback_query.answer()
-    await callback_query.message.edit_text(LOCALIZATION_TEXTS['projects'][user.lang]['choose'], reply_markup=keyboard)
+    with suppress(MessageNotModified):
+        await callback_query.message.edit_text(LOCALIZATION_TEXTS['projects'][user.lang]['choose'], reply_markup=keyboard)
 
 
 @dp.callback_query_handler(lambda callback: callback.data.split('=')[0] == 'projects')
