@@ -28,7 +28,8 @@ async def projects_pagination(callback_query: CallbackQuery):
     keyboard = await projects_keyboard(int(page), 26)
     await callback_query.answer()
     with suppress(MessageNotModified):
-        await callback_query.message.edit_text(LOCALIZATION_TEXTS['projects'][user.lang]['choose'], reply_markup=keyboard)
+        await callback_query.message.edit_text(LOCALIZATION_TEXTS['projects'][user.lang]['choose'],
+                                               reply_markup=keyboard)
 
 
 @dp.callback_query_handler(lambda callback: callback.data.split('=')[0] == 'projects')
@@ -109,8 +110,8 @@ async def free_locations_actions(callback_query: CallbackQuery):
         count = free_locations_data['count']
         page = free_locations_data['page']
         await callback_query.answer()
+        keyboard = pagination_keyboard('free_locations', count, scan_time, 40, 9, page)
         with suppress(MessageNotModified):
-            keyboard = pagination_keyboard('free_locations', count, scan_time, 40, 9, page)
             await callback_query.message.edit_text(locations_text, reply_markup=keyboard)
 
 
