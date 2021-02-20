@@ -76,7 +76,7 @@ async def host_data_(message: Message):
     if not nickname_valid(host):
         if len(host) > 20:
             host = f'{host[:20]}...'
-        host_text = host_data_locale['not_found'].format(nickname=host.replace("<", "&lt"))
+        host_text = host_data_locale['not_found'].format(host=host.replace("<", "&lt"))
         await message.answer(host_text)
     else:
         message = await message.answer(LOCALIZATION_TEXTS['wait'][user.lang])
