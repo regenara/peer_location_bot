@@ -31,16 +31,17 @@ async def send_notifications():
                 if peer.location is not None and peer_db.location != 'not_in_db' and peer.location != peer_db.location:
                     for user_id in peer_db.stalkers:
                         data = await mongo.find('users', {'user_id': user_id})
-                        user = User.from_dict(data)
-                        text = LOCALIZATION_TEXTS['in_campus'][user.lang].format(nickname=peer.nickname,
-                                                                                 current_location=peer.location)
-                        try:
-                            await bot.send_message(user_id, text)
-                            await asyncio.sleep(0.1)
-                        except (BotBlocked, UserDeactivated):
-                            await mongo.delete('users', {'user_id': user_id})
-                        except ChatNotFound:
-                            pass
+                        if data:
+                            user = User.from_dict(data)
+                            text = LOCALIZATION_TEXTS['in_campus'][user.lang].format(nickname=peer.nickname,
+                                                                                     current_location=peer.location)
+                            try:
+                                await bot.send_message(user_id, text)
+                                await asyncio.sleep(0.1)
+                            except (BotBlocked, UserDeactivated):
+                                await mongo.delete('users', {'user_id': user_id})
+                            except ChatNotFound:
+                                pass
         collections = await cursor.to_list(length=100)
     await intra_requests.session.close()
     await bot.session.close()
