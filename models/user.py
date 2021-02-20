@@ -21,7 +21,7 @@ class User:
 
     @staticmethod
     def from_dict(data: dict) -> 'User':
-        user_id = data.get['user_id']
+        user_id = data['user_id']
         username = data.get('username')
         nickname = data.get('nickname')
         campus = data.get('campus')
