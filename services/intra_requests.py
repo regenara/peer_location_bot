@@ -57,6 +57,7 @@ class IntraRequests:
                                                      self.clients[client_key]['client_secret'])
                             access_token = self.clients[client_key]['access_token']
                             continue
+                        return {'error': f'Intra response {response.status} {response.reason}'}
                     elif response.status == 429:
                         if endpoint == 'me':
                             continue
