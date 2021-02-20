@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Union
 
 from misc import intra_requests
 from misc import mongo
@@ -17,7 +16,7 @@ class Host:
     end_at_utc: float = .0
 
     @staticmethod
-    async def from_dict(data: dict) -> Union['Host', None]:
+    async def from_dict(data: dict) -> 'Host':
         host = data['host']
         peer = data['user']['login']
         campus_id = data['campus_id']

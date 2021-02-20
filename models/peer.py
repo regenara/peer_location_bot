@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from typing import List
-from typing import Union
 
 from misc import intra_requests
 from misc import mongo
@@ -35,7 +34,7 @@ class Peer:
     stalkers: List[int] = field(default_factory=list)
 
     @staticmethod
-    async def from_dict(data: dict) -> Union['Peer', None]:
+    async def from_dict(data: dict) -> 'Peer':
         full_name = data['displayname']
         nickname = data['login']
         intra_id = data['id']
