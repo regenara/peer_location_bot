@@ -1,6 +1,7 @@
 from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
+from time import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -44,7 +45,7 @@ class IntraRequests:
             while True:
                 params.update({'access_token': access_token})
                 async with self.session.request('GET', url, params=params) as response:
-                    self.clients[client_key]['last_call'] = datetime.now().timestamp()
+                    self.clients[client_key]['last_call'] = time()
                     if response.status in (200, 201):
                         try:
                             js = await response.json()
@@ -89,7 +90,7 @@ class IntraRequests:
             return js
         access_token = js['access_token']
         self.clients[client_key] = {'client_id': client_id, 'client_secret': client_secret,
-                                    'access_token': access_token, 'last_call': datetime.now().timestamp()}
+                                    'access_token': access_token, 'last_call': time()}
 
     async def get_peer(self, nickname: str) -> dict:
         """
