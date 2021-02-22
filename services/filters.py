@@ -147,21 +147,6 @@ class IsProjects(BoundFilter):
         return text == '/projects' or text in menu_texts
 
 
-class IsLocationsRenewal(BoundFilter):
-    key = 'is_locations_renewal'
-
-    def __init__(self, is_locations_renewal):
-        self.is_locations_renewal = is_locations_renewal
-
-    async def check(self, callback_query: CallbackQuery) -> bool:
-        user_id = callback_query.from_user.id
-        data = callback_query.data.split('=')
-        if data[0] == 'free_locations' \
-                and len(data) >= 2 and datetime.now(timezone('UTC')).timestamp() - int(data[1]) > 180:
-            await dp.current_state(user=user_id).set_state(States.THROTTLER)
-            return True
-
-
 class IsRemoveFriend(BoundFilter):
     key = 'is_remove_friend'
 

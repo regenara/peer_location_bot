@@ -1,4 +1,6 @@
+from datetime import datetime
 from contextlib import suppress
+from pytz import timezone
 
 from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import MessageNotModified
@@ -73,36 +75,22 @@ async def host_actions(callback_query: CallbackQuery):
     await callback_query.message.edit_text(host_data['text'], reply_markup=keyboard)
 
 
-@dp.callback_query_handler(is_locations_renewal=True)
-async def free_locations_renewal(callback_query: CallbackQuery):
-    user_id = callback_query.from_user.id
-    data = await mongo.find('users', {'user_id': user_id})
-    user = User.from_dict(data)
-    await callback_query.answer(f'⏳ {LOCALIZATION_TEXTS["wait"][user.lang]}')
-    free_locations_locale = LOCALIZATION_TEXTS['free_locations'][user.lang]
-    free_locations_data = await free_locations_compile(user.campus_id, free_locations_locale)
-    await dp.current_state(user=user_id).finish()
-    if free_locations_data.get('error'):
-        await callback_query.message.edit_text(free_locations_data['error'])
-    else:
-        locations_text = free_locations_data['text']
-        scan_time = free_locations_data['scan_time']
-        count = free_locations_data['count']
-        page = free_locations_data['page']
-        keyboard = pagination_keyboard('free_locations', count, scan_time, 40, 9, page)
-        with suppress(MessageNotModified):
-            await callback_query.message.edit_text(locations_text, reply_markup=keyboard)
-
-
 @dp.callback_query_handler(lambda callback: callback.data.split('=')[0] == 'free_locations')
 async def free_locations_actions(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     scan_time, page = callback_query.data.split('=')[1:]
+    page = int(page)
     data = await mongo.find('users', {'user_id': user_id})
     user = User.from_dict(data)
+    if datetime.now(timezone('UTC')).timestamp() - int(scan_time) > 180:
+        await dp.current_state(user=user_id).set_state(States.THROTTLER)
+        await callback_query.answer(f'⏳ {LOCALIZATION_TEXTS["wait"][user.lang]}')
+        page = 0
     free_locations_locale = LOCALIZATION_TEXTS['free_locations'][user.lang]
-    free_locations_data = await free_locations_compile(user.campus_id, free_locations_locale, int(page))
-    await callback_query.answer()
+    free_locations_data = await free_locations_compile(user.campus_id, free_locations_locale, page)
+    await dp.current_state(user=user_id).finish()
+    if page:
+        await callback_query.answer()
     if free_locations_data.get('error'):
         await callback_query.message.edit_text(free_locations_data['error'])
     else:

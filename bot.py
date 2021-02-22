@@ -3,9 +3,10 @@ from aiogram import executor
 from misc import dp
 from services import filters
 
-for custom_filter in (filters.IsIntrovert, filters.IsExtrovert, filters.IsStart, filters.IsHelp, filters.IsAbout,
-                      filters.IsDonate, filters.IsRemoveFriend, filters.IsMailing, filters.IsLocations,
-                      filters.IsLocationsRenewal, filters.IsProjects):
+for custom_filter in (filters.IsIntrovert, filters.IsExtrovert, filters.IsStart,
+                      filters.IsHelp, filters.IsAbout, filters.IsDonate,
+                      filters.IsRemoveFriend, filters.IsMailing,
+                      filters.IsLocations, filters.IsProjects):
     dp.filters_factory.bind(custom_filter)
 
 
