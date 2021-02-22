@@ -157,7 +157,7 @@ class IsLocationsRenewal(BoundFilter):
         user_id = callback_query.from_user.id
         data = callback_query.data.split('=')
         if data[0] == 'free_locations' \
-                and len(data) == 2 and datetime.now(timezone('UTC')).timestamp() - int(data[1]) > 180:
+                and len(data) >= 2 and datetime.now(timezone('UTC')).timestamp() - int(data[1]) > 180:
             await dp.current_state(user=user_id).set_state(States.THROTTLER)
             return True
 
