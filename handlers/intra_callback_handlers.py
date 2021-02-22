@@ -102,6 +102,7 @@ async def free_locations_actions(callback_query: CallbackQuery):
     user = User.from_dict(data)
     free_locations_locale = LOCALIZATION_TEXTS['free_locations'][user.lang]
     free_locations_data = await free_locations_compile(user.campus_id, free_locations_locale, int(page))
+    await callback_query.answer()
     if free_locations_data.get('error'):
         await callback_query.message.edit_text(free_locations_data['error'])
     else:
@@ -109,7 +110,6 @@ async def free_locations_actions(callback_query: CallbackQuery):
         scan_time = free_locations_data['scan_time']
         count = free_locations_data['count']
         page = free_locations_data['page']
-        await callback_query.answer()
         keyboard = pagination_keyboard('free_locations', count, scan_time, 40, 9, page)
         with suppress(MessageNotModified):
             await callback_query.message.edit_text(locations_text, reply_markup=keyboard)
