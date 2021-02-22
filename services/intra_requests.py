@@ -78,7 +78,6 @@ class IntraRequests:
         :param client_secret: client_secret приложения Intra
         :param grant_type:
         :param code:
-        :param state:
         """
         url = 'https://api.intra.42.fr/oauth/token'
         params = {'grant_type': grant_type, 'client_id': client_id, 'client_secret': client_secret}
