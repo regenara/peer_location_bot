@@ -65,7 +65,7 @@ class IsIntrovert(BoundFilter):
         menu_texts = [menu[key]['friends'] for key in menu]
         data = await mongo.find('users', {'user_id': user_id})
         user = User.from_dict(data)
-        if text == '/friends' or text in menu_texts and user.friends_count < 2:
+        if (text == '/friends' or text in menu_texts) and user.friends_count < 2:
             return {'user': user}
 
 
