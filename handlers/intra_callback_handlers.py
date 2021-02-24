@@ -5,6 +5,7 @@ from pytz import timezone
 from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.utils.exceptions import MessageToDeleteNotFound
+from aiogram.utils.exceptions import MessageCantBeDeleted
 
 from data.config import LOCALIZATION_TEXTS
 from misc import dp
@@ -49,7 +50,7 @@ async def project(callback_query: CallbackQuery):
     if project_data.get('error'):
         await callback_query.message.edit_text(project_data['error'])
     else:
-        with suppress(MessageToDeleteNotFound):
+        with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
             await callback_query.message.delete()
         keyboard = await projects_keyboard(int(page), 26, project_id)
         await callback_query.message.answer(project_data['text'], reply_markup=keyboard)

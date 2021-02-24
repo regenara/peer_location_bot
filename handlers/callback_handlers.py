@@ -2,6 +2,7 @@ from contextlib import suppress
 
 from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import MessageToDeleteNotFound
+from aiogram.utils.exceptions import MessageCantBeDeleted
 
 from data.config import LOCALIZATION_TEXTS
 from misc import dp
@@ -44,7 +45,7 @@ async def save_settings(callback_query: CallbackQuery):
         text = LOCALIZATION_TEXTS['saving_settings'][user.lang]
         text += LOCALIZATION_TEXTS['help'][user.lang]
         await callback_query.answer()
-        with suppress(MessageToDeleteNotFound):
+        with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
             await callback_query.message.delete()
         await callback_query.message.answer(text, reply_markup=menu_keyboard(user.lang))
 
@@ -58,7 +59,7 @@ async def anon_settings(callback_query: CallbackQuery):
     text = LOCALIZATION_TEXTS['saving_settings'][user.lang]
     text += LOCALIZATION_TEXTS['help'][user.lang]
     await callback_query.answer()
-    with suppress(MessageToDeleteNotFound):
+    with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await callback_query.message.delete()
     await callback_query.message.answer(text, reply_markup=menu_keyboard(user.lang))
 

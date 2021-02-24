@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 import base64
 
 from aiogram.utils.exceptions import MessageToDeleteNotFound
+from aiogram.utils.exceptions import MessageCantBeDeleted
 from aiohttp import web
 
 from data.config import CLIENTS_SECRET
@@ -50,7 +51,7 @@ class Auth:
                                            'user_id': user.id}, upsert=True)
                 lang = data.get('settings', {}).get('lang') or 'en'
                 text = LOCALIZATION_TEXTS['language'][lang].format(nickname=peer.nickname)
-                with suppress(MessageToDeleteNotFound):
+                with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
                     await bot.delete_message(user_id, message_id)
                 await bot.send_message(user_id, text, reply_markup=language_keyboard())
                 await dp.current_state(user=user_id).finish()
