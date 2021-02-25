@@ -99,6 +99,7 @@ async def projects_keyboard(page: int, results: int, project_id: int = 0) -> Inl
     keyboard = InlineKeyboardMarkup(row_width=3)
     projects42 = await mongo.get_collections('projects42')
     collections = await projects42.to_list(length=130)
+    collections.sort(key=lambda key: key['project_id'])
     projects = collections[page * 27:page * 27 + 27]
     count = len(projects)
     for project in projects:
