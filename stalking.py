@@ -20,30 +20,33 @@ async def send_notifications():
             peer_db = Peer.from_db(collection)
             if peer_db.stalkers:
                 peer_data = await intra_requests.get_peer(peer_db.nickname)
-                peer = Peer.short_data(peer_data)
-                new_data = {}
-                if peer_db.intra_id is None:
-                    new_data.update({'intra_id': peer.intra_id})
-                if peer.location != peer_db.location:
-                    new_data.update({'location': peer.location})
-                if new_data:
-                    await mongo.update('peers', {'nickname': peer_db.nickname}, 'set', new_data)
-                if peer.location is not None and peer_db.location != 'not_in_db' and peer.location != peer_db.location:
-                    for user_id in peer_db.stalkers:
-                        data = await mongo.find('users', {'user_id': user_id})
-                        if data:
-                            user = User.from_dict(data)
-                            text = LOCALIZATION_TEXTS['in_campus'][user.lang].format(nickname=peer.nickname,
-                                                                                     current_location=peer.location)
-                            try:
-                                await bot.send_message(user_id, text)
-                                await asyncio.sleep(0.1)
-                            except (BotBlocked, UserDeactivated):
-                                await mongo.delete('users', {'user_id': user_id})
-                            except ChatNotFound:
-                                pass
-                        else:
-                            await mongo.update('peers', {'nickname': peer_db.nickname}, 'pull', {'stalkers': user_id})
+                if not peer_data.get('error'):
+                    peer = Peer.short_data(peer_data)
+                    new_data = {}
+                    if peer_db.intra_id is None:
+                        new_data.update({'intra_id': peer.intra_id})
+                    if peer.location != peer_db.location:
+                        new_data.update({'location': peer.location})
+                    if new_data:
+                        await mongo.update('peers', {'nickname': peer_db.nickname}, 'set', new_data)
+                    if peer.location is not None and peer_db.location != \
+                            'not_in_db' and peer.location != peer_db.location:
+                        for user_id in peer_db.stalkers:
+                            data = await mongo.find('users', {'user_id': user_id})
+                            if data:
+                                user = User.from_dict(data)
+                                text = LOCALIZATION_TEXTS['in_campus'][user.lang].format(nickname=peer.nickname,
+                                                                                         current_location=peer.location)
+                                try:
+                                    await bot.send_message(user_id, text)
+                                    await asyncio.sleep(0.1)
+                                except (BotBlocked, UserDeactivated):
+                                    await mongo.delete('users', {'user_id': user_id})
+                                except ChatNotFound:
+                                    pass
+                            else:
+                                await mongo.update('peers', {'nickname': peer_db.nickname}, 'pull',
+                                                   {'stalkers': user_id})
         collections = await cursor.to_list(length=100)
     await intra_requests.session.close()
     await bot.session.close()
