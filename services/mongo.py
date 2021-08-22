@@ -35,3 +35,6 @@ class Mongo:
 
     async def delete(self, db: str, find: dict):
         await self.databases[db].delete_one(find)
+
+    async def delete_all(self, db: str):
+        await self.databases[db].delete_many({})

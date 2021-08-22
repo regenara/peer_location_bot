@@ -1,8 +1,8 @@
 venv
-data/data.json
+data/data2.json
 .DS_Store
 .idea
 __pycache__
-data/data2.json
 trash
 tests.py
+html
