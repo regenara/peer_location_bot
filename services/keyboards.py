@@ -98,9 +98,9 @@ def pagination_keyboard(action: str, count: int, content: Union[str, int], resul
 async def projects_keyboard(page: int, results: int, project_id: int = 0) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(row_width=3)
     projects42 = await mongo.get_collections('projects42')
-    collections = await projects42.to_list(length=130)
-    collections.sort(key=lambda key: key['project_id'])
-    projects = collections[page * 27:page * 27 + 27]
+    collections = await projects42.to_list(length=180)
+    collections.sort(key=lambda key: key['name'])
+    projects = collections[page * 30:page * 30 + 30]
     count = len(projects)
     for project in projects:
         text = f'{project["name"]}'
@@ -108,5 +108,5 @@ async def projects_keyboard(page: int, results: int, project_id: int = 0) -> Inl
             text = f'📕 {project["name"]}'
         keyboard.insert(InlineKeyboardButton(text,
                                              callback_data=f'projects={project["project_id"]}={page}'))
-    keyboard = pagination_keyboard('projects', count, 'projects', results, 4, page, keyboard, 'pagination')
+    keyboard = pagination_keyboard('projects', count, 'projects', results, 6, page, keyboard, 'pagination')
     return keyboard

@@ -1,3 +1,4 @@
+from io import BytesIO
 from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
@@ -206,57 +207,17 @@ class IntraRequests:
             result.update({'weeks': weeks})
             now = datetime.now(timezone(time_zone))
             past = now - timedelta(weeks=weeks)
-            data = await self.request(endpoint, params={'filter[campus]': campus_id, 'per_page': 50,
-                                                        'range[marked_at]': f'{past},{now}',
-                                                        'range[final_mark]': '100,150'})
-            if isinstance(data, dict) and data.get('error'):
-                result.update({'error': data['error']})
+            all_data = await self.request(endpoint, params={'filter[campus]': campus_id,
+                                                            'per_page': 100,
+                                                            'range[marked_at]': f'{past},{now}',
+                                                            'range[final_mark]': '80,150'})
+            if isinstance(all_data, dict) and all_data.get('error'):
+                result.update({'error': all_data['error']})
                 break
+            data = [record for record in all_data if record['validated?']]
             weeks *= 3
         result.update({'data': data})
         return result
-
-    async def get_projects(self, cursus_id: int = 21) -> List[dict]:
-        """
-
-        :param cursus_id: ID курса, по умолчанию 21 == 42cursus
-        :return: Список (ниже) из 129 проектов (без бассейнов и стажировок)
-        """
-        endpoint = f'cursus/{cursus_id}/projects'
-        projects = []
-        list_projects = ['Libft', 'ft_printf', 'netwhat', 'get_next_line', 'ft_server', 'miniRT', 'cub3d',
-                         'ft_services', 'libasm', 'minishell', 'webserv', 'Philosophers', 'ft_containers',
-                         'ft_irc', 'ft_transcendence', 'ft_hangouts', 'taskmaster', 'computorv1', 'gomoku',
-                         'expert-system', 'n-puzzle', 'nibbler', '42run', 'strace', 'bomberman', 'scop',
-                         'ft_linear_regression', 'krpsim', 'rubik', 'humangl', 'swifty-companion', 'camagru',
-                         'ft_ping', 'ft_traceroute', 'ft_nmap', 'matcha', 'hypertube', 'ft_turing', 'snow-crash',
-                         'darkly', 'swifty-proteins', 'ft_ality', 'xv', 'in-the-shadows', 'particle-system', 'gbmu',
-                         'cloud-1', 'ft_linux', 'little-penguin-1', 'rainfall', 'dr-quine', 'woody-woodpacker',
-                         'matt-daemon', 'process-and-memory', 'drivers-and-interrupts', 'filesystem', 'kfs-2',
-                         'kfs-1', 'kfs-3', 'music-room', 'red-tetris', 'h42n42', 'famine', 'kfs-4', 'kfs-5',
-                         'computorv2', 'avaj-launcher', 'swingy', 'fix-me', 'kfs-6', 'kfs-7', 'kfs-8', 'kfs-9',
-                         'kfs-x', 'pestilence', 'war', 'death', 'boot2root', 'durex', 'override', 'ft_vox',
-                         'ft_ssl_rsa', 'ft_ssl_md5', 'ft_ssl_des', 'dslr', 'shaderpixel', 'guimp',
-                         'userspace_digressions', 'multilayer-perceptron', 'total-perspective-vortex', 'abstract-vm',
-                         'mod1', 'zappy', 'lem-ipc', 'ft_script', 'nm-otool', 'malloc', 'ft_select', 'lem_in',
-                         'push_swap', 'corewar', 'fract-ol', 'ft_ls', 'CPP Module 00', 'CPP Module 01', 'CPP Module 02',
-                         'CPP Module 03', 'CPP Module 04', 'CPP Module 05', 'CPP Module 06', 'CPP Module 07',
-                         'CPP Module 08', 'Electronics-Old', 'Old-LibftASM', 'Old-Philosophers', 'Old-IRC',
-                         'Old-CPP Module 00', 'Old-CPP Module 01', 'Old-CPP Module 02', 'Old-CPP Module 03',
-                         'Old-CPP Module 04', 'Old-CPP Module 05', 'Old-CPP Module 06', 'Old-CPP Module 07',
-                         'Old-CPP Module 08', '42 Squads', 'darkly - web', 'ft_malcolm', 'Electronique']
-
-        start = 0
-        stop = 100
-        while start < 200:
-            data = await self.request(endpoint, params={'per_page': 100, 'filter[exam]': 'false', 'sort': 'id',
-                                                        'filter[name]': ','.join(list_projects[start:stop])})
-            for project in data:
-                if project['name'] in list_projects:
-                    projects.append({'name': project['name'], 'project_id': project['id'], 'slug': project['slug']})
-            start += 100
-            stop += 100
-        return projects
 
     async def get_campus_locations(self, campus_id: int, past: str, now: str, pages: int) -> Dict[str, Any]:
         """
@@ -297,3 +258,31 @@ class IntraRequests:
             active = await self.request(endpoint, params={'filter[active]': 'true', 'per_page': 100, 'page': page})
         result.update({'active': active_data, 'inactive': inactive_data})
         return result
+
+    async def update_projects(self, file: BytesIO, cursus_id: int = 21):
+        """
+
+        :param file: Файл html страницы проектов https://projects.intra.42.fr/projects/list
+        :param cursus_id: ID курса, по умолчанию 21 == 42cursus
+        """
+        from bs4 import BeautifulSoup
+        import misc
+
+        text = file.read().decode('utf-8')
+        soup = BeautifulSoup(text, 'lxml')
+        list_projects = [project.text.strip() for project in soup.find_all('div', class_='project-name')]
+
+        endpoint = f'cursus/{cursus_id}/projects'
+        projects = []
+        start = 0
+        stop = 100
+        while start < 200:
+            data = await self.request(endpoint, params={'per_page': 100, 'sort': 'id',
+                                                        'filter[name]': ','.join(list_projects[start:stop])})
+            for project in data:
+                if project['name'] in list_projects:
+                    projects.append({'name': project['name'], 'project_id': project['id'], 'slug': project['slug']})
+            start += 100
+            stop += 100
+        await misc.mongo.delete_all('projects42')
+        await misc.mongo.insert_many('projects42', projects)

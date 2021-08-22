@@ -52,6 +52,18 @@ class IsMailing(BoundFilter):
             return True
 
 
+class IsUpdateProjects(BoundFilter):
+    key = 'is_update_projects'
+
+    def __init__(self, is_update_projects):
+        self.is_update_projects = is_update_projects
+
+    async def check(self, message: Message) -> bool:
+        if message.text == '€' and message.from_user.id == ADMIN:
+            await dp.current_state(user=ADMIN).set_state(States.UPDATE_PROJECTS)
+            return True
+
+
 class IsIntrovert(BoundFilter):
     key = 'is_introvert'
 

@@ -317,7 +317,7 @@ async def project_peers_compile(project_id: int, campus_id: int, campus_name: st
         project_name = project_data['data'][0]['project']['name']
         title = projects_locale['title'].format(campus_name=campus_name, project_name=project_name, weeks=weeks)
     texts = []
-    for project in project_data['data']:
+    for project in project_data['data'][:50]:
         nickname = project["user"]["login"]
         link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
         text = f'{link}  |  ' \
