@@ -49,7 +49,7 @@ class IntraAPI:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         connector = TCPConnector(ssl=ssl_context)
         self.session: ClientSession = ClientSession(connector=connector, json_serialize=ujson.dumps)
-        self._throttler = Throttler(rate_limit=24)
+        self._throttler = Throttler(rate_limit=12)
 
     async def _tokens_refresher(self):
         while True:
