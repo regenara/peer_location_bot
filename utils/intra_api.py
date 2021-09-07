@@ -38,7 +38,7 @@ class NotFoundIntraError(IntraAPIError):
 
 class IntraAPI:
     def __init__(self, config, test: bool = False):
-        self._apps: Deque = deque()
+        self._apps: Deque[Dict[str, Any]] = deque()
         self._base_url = 'https://api.intra.42.fr/v2/'
         self._auth_url = 'https://api.intra.42.fr/oauth/token'
         self._config = config
@@ -49,23 +49,7 @@ class IntraAPI:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         connector = TCPConnector(ssl=ssl_context)
         self.session: ClientSession = ClientSession(connector=connector, json_serialize=ujson.dumps)
-        self._throttler = Throttler(rate_limit=24)
-
-    async def _tokens_refresher(self):
-        while True:
-            sleep = 5
-            if not datetime.now().minute:
-                self._logger.info('Starting refresh tokens')
-                await self.load()
-                self._logger.info('Complete refresh tokens, sleep 120 seconds')
-                sleep = 120
-            await asyncio.sleep(sleep)
-
-    @property
-    def _get_token(self) -> int:
-        access_token = self._apps[0]
-        self._apps.rotate(1)
-        return access_token
+        self._throttler = Throttler(rate_limit=12)
 
     async def _request_token(self, params: Dict[str, str]) -> str:
         async with self.session.request('POST', self._auth_url, params=params) as response:
@@ -73,14 +57,26 @@ class IntraAPI:
                 js = await response.json()
                 return js['access_token']
 
+    async def _get_token(self, application_id: int, client_id: str, client_secret: str) -> str:
+        params = {
+            'grant_type': 'client_credentials',
+            'client_id': client_id,
+            'client_secret': client_secret
+        }
+        access_token = await self._request_token(params=params)
+        self._logger.info('Get token=%s from application=%s', access_token, application_id)
+        return access_token
+
     async def _request(self, endpoint: str, params: dict = None, headers: dict = None) -> Union[Dict[str, Any],
                                                                                                 List[Dict[str, Any]]]:
         url = urljoin(self._base_url, endpoint)
         params = params or {}
-        access_token = self._get_token
+        self._apps.rotate(1)
         async with self._throttler:
             attempts = 1
-            while attempts < 11:
+            while attempts != 11:
+                app = self._apps[0]
+                access_token = app['access_token']
                 headers = headers or {'Authorization': f'Bearer {access_token}'}
                 async with self.session.request('GET', url, params=params, headers=headers) as response:
                     if response.status == 200:
@@ -92,12 +88,19 @@ class IntraAPI:
                             self._logger.error('Response url=%s: ContentTypeError %s, continue', url, e)
                             continue
 
-                    attempts += 1
-                    if response.status in (401, 429) and endpoint != 'me':
+                    if response.status == 429 and endpoint == 'me':
                         self._logger.error('Response %s with token=%s url=%s: %s [%s], continue',
                                            attempts, access_token, url, response.reason, response.status)
-                        access_token = self._get_token
                         continue
+
+                    if response.status == 401:
+                        json_response = await response.json()
+                        if json_response.get('message') == 'The access token expired':
+                            self._logger.error('Response %s with token=%s, token expired, refresh',
+                                               attempts, access_token)
+                            self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
+                                                                                  client_id=app['client_id'],
+                                                                                  client_secret=app['client_secret'])
 
                     if response.status == 404:
                         self._logger.error('Response url=%s: %s [%s], raise NotFoundIntraError',
@@ -106,29 +109,21 @@ class IntraAPI:
 
                     self._logger.error('Response %s token=%s url=%s: %s [%s]',
                                        attempts, access_token, url, response.reason, response.status)
+                    attempts += 1
+                    self._apps.rotate(1)
 
         self._logger.error('Response %s url=%s: %s [%s], raise UnknownIntraError',
                            attempts, url, response.reason, response.status)
         raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
 
-    async def start(self):
-        self._refresher = asyncio.create_task(self._tokens_refresher())
-
-    async def stop(self):
-        self._refresher.cancel()
-
     async def load(self):
         applications = await Application.get_all() if not self._test else [await Application.get_test()]
         self._apps = deque(maxlen=len(applications))
         for application in applications:
-            params = {
-                'grant_type': 'client_credentials',
-                'client_id': application.client_id,
-                'client_secret': application.client_secret
-            }
-            access_token = await self._request_token(params=params)
-            self._apps.append(access_token)
-            self._logger.info('Get token=%s from application=%s', access_token, application.id)
+            access_token = await self._get_token(application_id=application.id,
+                                                 client_id=application.client_id,
+                                                 client_secret=application.client_secret)
+            self._apps.append({**application.to_dict(), 'access_token': access_token})
 
     async def auth(self, client_id: str, client_secret: str, code: str) -> str:
         params = {

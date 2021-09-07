@@ -71,6 +71,7 @@ class Observation:
                         except ChatNotFound as e:
                             self._logger.error('ChatNotFound user=%s %s',
                                                user.username or user.id, e)
+            await asyncio.sleep(1)
 
     async def observation(self):
         while True:
@@ -83,7 +84,7 @@ class Observation:
                 offset += 100
                 observables = await self._get_observables(limit=100, offset=offset)
             passed_seconds = (datetime.now() - now).seconds
-            if passed_seconds < 600:
-                sleep = 600 - passed_seconds
+            if passed_seconds < 900:
+                sleep = 900 - passed_seconds
                 self._logger.info('Sleep %s seconds after observation', sleep)
                 await asyncio.sleep(sleep)
