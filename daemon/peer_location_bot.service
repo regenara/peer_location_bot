@@ -4,10 +4,11 @@ After=network.target
 
 [Service]
 Type=forking
-WorkingDirectory=/home/ubuntu/peer_location_bot
+WorkingDirectory=/home/mstoneho/peer_location_bot
 Restart=always
 RestartSec=3
-ExecStart=/usr/bin/screen -L -dmS peer_location_bot /home/ubuntu/peer_location_bot/venv/bin/python3 /home/ubuntu/peer_location_bot/bot.py
+ExecStart=/usr/bin/screen -L -dmS peer_location_bot /home/mstoneho/peer_location_bot/venv/bin/python3 /home/mstoneho/peer_location_bot/bot.py
+EnvironmentFile=/etc/peer_location_bot/peer_location_bot.conf
 
 [Install]
 WantedBy=multi-user.target

@@ -1,8 +1,12 @@
 venv
-data/data2.json
+data
 .DS_Store
 .idea
 __pycache__
 trash
 tests.py
 html
+migrations
+alembic
+alembic.ini
+test.py

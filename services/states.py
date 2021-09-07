@@ -1,6 +1,6 @@
-from aiogram.utils.helper import Helper
-from aiogram.utils.helper import HelperMode
-from aiogram.utils.helper import Item
+from aiogram.utils.helper import (Helper,
+                                  HelperMode,
+                                  Item)
 
 
 class States(Helper):
@@ -8,5 +8,7 @@ class States(Helper):
 
     MAILING = Item()
     UPDATE_PROJECTS = Item()
+
     AUTH = Item()
+    GRANTED = Item()
     THROTTLER = Item()
