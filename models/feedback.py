@@ -1,9 +1,12 @@
 from dataclasses import dataclass
-from typing import Any
-from typing import Union
+from typing import (Any,
+                    Dict,
+                    List)
 
-from misc import intra_requests
-from misc import mongo
+from aiogram.utils.markdown import hlink
+
+from config import Config
+from utils.savers import Savers
 
 
 @dataclass
@@ -12,50 +15,36 @@ class Feedback:
     mark: int = 0
     team: str = ''
     project: str = ''
-    peer_nickname: str = ''
-    peer_link: str = ''
+    peer: str = ''
     peer_comment: str = ''
     rating: int = 0
     final_mark: Any = None
 
     @staticmethod
-    async def from_dict(data: dict) -> Union['Feedback', None]:
+    async def from_dict(data: Dict[str, Any]) -> 'Feedback':
         corrector_comment = (data['comment'] or '').replace("<", "&lt")
         peer_comment = (data['feedback'] or '').replace("<", "&lt")
         if corrector_comment and peer_comment:
             mark = data['final_mark']
             team = data['team']['name']
-            peer_nickname = 'SYSTEM'
-            peer_link = 'https://profile.intra.42.fr/'
+            peer = 'SYSTEM'
             if data['feedbacks'][0]['user'] is not None:
-                peer_nickname = data['feedbacks'][0]['user']['login']
-                peer_link = f'https://profile.intra.42.fr/users/{peer_nickname}'
+                peer_login = data['feedbacks'][0]['user']['login']
+                peer_link = f'https://profile.intra.42.fr/users/{peer_login}'
+                peer = hlink(title=peer_login, url=peer_link)
             rating = data['feedbacks'][0]['rating']
             final_mark = data['team']['final_mark']
             project_id = data['team']['project_id']
-            project_data = await mongo.find('projects', {'project_id': project_id})
-            if project_data is None:
-                project_data = await intra_requests.get_project(project_id)
-                if not project_data.get('error'):
-                    project_data = await mongo.update(
-                        'projects', {'project_id': project_id}, 'set',
-                        {'name': project_data['name'], 'slug': project_data['slug']},
-                        upsert=True, return_document=True
-                    )
-            project = project_data.get('name') or project_id
-            return Feedback(corrector_comment, mark, team, project, peer_nickname,
-                            peer_link, peer_comment, rating, final_mark)
+            project = await Savers.get_project(project_id=project_id,
+                                               project_gitlab_path=data['team']['project_gitlab_path'])
+            return Feedback(corrector_comment=corrector_comment, mark=mark, team=team, project=project.name,
+                            peer=peer, peer_comment=peer_comment, rating=rating, final_mark=final_mark)
 
-    @staticmethod
-    def from_db(data: dict) -> 'Feedback':
-        corrector_comment = data['corrector_comment']
-        mark = data['mark']
-        team = data['team']
-        project = data['project']
-        peer_nickname = data['peer_nickname']
-        peer_link = data['peer_link']
-        peer_comment = data['peer_comment']
-        rating = data['rating']
-        final_mark = data['final_mark']
-        return Feedback(corrector_comment, mark, team, project, peer_nickname,
-                        peer_link, peer_comment, rating, final_mark)
+    async def get_peer_feedbacks(self, login: str) -> List['Feedback']:
+        feedbacks = []
+        feedbacks_data = await Config.intra.get_peer_feedbacks(login=login)
+        for data in feedbacks_data:
+            feedback = await self.from_dict(data=data)
+            if feedback:
+                feedbacks.append(feedback)
+        return feedbacks

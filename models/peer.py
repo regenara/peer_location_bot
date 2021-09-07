@@ -1,20 +1,25 @@
-from dataclasses import dataclass
-from dataclasses import field
-from datetime import datetime
-from typing import List
+from dataclasses import (dataclass,
+                         field)
+from datetime import (datetime,
+                      timezone)
+from typing import (List,
+                    Tuple)
 
-from misc import intra_requests
-from misc import mongo
-from models.user import User
-from utils.helpers import get_utc
+from config import Config
+from db_models.peers import Peer as PeerDB
+from db_models.users import User
+from models.host import Host
+from utils.cache import Cache
+from utils.savers import Savers
 
 
 @dataclass
 class Peer:
+    id: int = 0
+    login: str = ''
     full_name: str = ''
-    nickname: str = ''
-    intra_id: int = 0
-    pool: str = ''
+    pool_month: str = ''
+    pool_year: str = ''
     coalition: str = ''
     cursus_data: List[dict] = field(default_factory=list)
     campus: str = ''
@@ -25,101 +30,76 @@ class Peer:
     avatar: str = ''
     link: str = ''
     status: str = ''
-    last_seen_time: float = .0
+    last_seen_time: str = ''
     is_staff: bool = False
-    locations: List[dict] = field(default_factory=list)
-    feedbacks: List[dict] = field(default_factory=list)
     username: str = ''
-    user_id: int = 0
-    stalkers: List[int] = field(default_factory=list)
 
     @staticmethod
-    async def from_dict(data: dict) -> 'Peer':
-        full_name = data['displayname']
-        nickname = data['login']
-        intra_id = data['id']
-        pool = ''
-        if data.get('pool_month') and data.get('pool_year'):
-            months = {'january': '01', 'february': '02', 'march': '03',
-                      'april': '04', 'may': '05', 'june': '06',
-                      'july': '07', 'august': '08', 'september': '09',
-                      'october': '10', 'november': '11', 'december': '12'}
-            pool = f'{months[data["pool_month"]]}.{data["pool_year"]}'
-        cursus_data = data['cursus_users']
-        campus_id = [campus['campus_id'] for campus in data['campus_users'] if campus['is_primary']][0]
-        campus, time_zone = [(campus['name'], campus['time_zone'])
-                             for campus in data['campus'] if campus['id'] == campus_id][0]
-        location = data['location']
+    async def _get_coalition(login: str) -> str:
+        coalitions = await Config.intra.get_peer_coalitions(login=login)
+        if coalitions:
+            coalition_id = coalitions[0]['coalition_id']
+            coalition = await Savers.get_coalition(coalition_id=coalition_id)
+            return coalition.name
+
+    @staticmethod
+    async def _get_username(peer_id: int) -> str:
+        user = await User.get_user_from_peer(peer_id=peer_id)
+        if user and user.username and user.show_me:
+            return user.username
+
+    async def _get_extended_data(self, login: str, peer_id: int, location: str,
+                                 status: str) -> Tuple[str, str, str, str, str, str]:
         last_location = ''
-        is_staff = data['staff?']
-        avatar = data['image_url']
-        link = f'https://profile.intra.42.fr/users/{nickname}'
-        status = '🟢 '
-        last_seen_time = .0
+        last_seen_time = ''
         if not location:
-            status = '🔴 '
-            locations = await intra_requests.get_peer_locations(nickname)
+            locations = await Host().get_peer_locations(login=login)
             if locations:
-                last_seen_time = get_utc(locations[0]['end_at'])
-                last_location = locations[0]['host']
+                last_seen_time = locations[0].end_at
+                last_location = locations[0].host
                 if not last_seen_time:
                     location = locations[0].host
                     status = '🟢 '
-        if is_staff:
-            status = '😎 '
-        for cursus in cursus_data:
-            now = datetime.now().timestamp()
-            if cursus['cursus']['name'] == '42cursus':
-                end_at = get_utc(cursus['end_at'])
-                if end_at and end_at < now and cursus['level'] < 16:
-                    status = '☠️ '
-                break
-        coalition = ''
-        peer_coalitions = await intra_requests.get_peer_coalitions(nickname)
-        if peer_coalitions:
-            coalition_id = peer_coalitions[0]['coalition_id']
-            coalition_data = await mongo.find('coalitions', {'coalition_id': coalition_id})
-            if coalition_data is None:
-                coalition_data = await intra_requests.get_coalition(coalition_id)
-                if not coalition_data.get('error'):
-                    coalition_data = await mongo.update(
-                        'coalitions', {'coalition_id': coalition_id}, 'set',
-                        {'name': coalition_data['name']}, upsert=True, return_document=True
-                    )
-            coalition = coalition_data.get('name') or ''
-        peer_in_db = await mongo.find('users', {'nickname': nickname})
-        username = ''
-        if peer_in_db:
-            user = User.from_dict(peer_in_db)
-            if not user.anon and user.username:
-                username = user.username
-        return Peer(full_name, nickname, intra_id, pool, coalition, cursus_data, campus, campus_id, time_zone, location,
-                    last_location, avatar, link, status, last_seen_time, is_staff, username=username)
+        coalition = await self._get_coalition(login=login) or ''
+        username = await self._get_username(peer_id=peer_id) or ''
+        return status, location, last_location, last_seen_time, coalition, username
 
-    @staticmethod
-    def short_data(data: dict) -> 'Peer':
-        nickname = data['login']
-        intra_id = data['id']
-        campus_id = [campus['campus_id'] for campus in data['campus_users'] if campus['is_primary']][0]
-        campus, time_zone = [(campus['name'], campus['time_zone'])
-                             for campus in data['campus'] if campus['id'] == campus_id][0]
-        location = data['location']
-        return Peer(nickname=nickname, intra_id=intra_id, campus=campus,
-                    campus_id=campus_id, time_zone=time_zone, location=location)
-
-    @staticmethod
-    def from_db(data: dict) -> 'Peer':
-        nickname = data['nickname']
-        username = data.get('username')
-        user_id = data.get('user_id')
-        intra_id = data.get('intra_id')
-        campus_id = data.get('campus_id')
-        campus = data.get('campus')
-        locations = data.get('locations', 'not_in_db')
-        time_zone = data.get('time_zone')
-        feedbacks = data.get('feedbacks')
-        location = data.get('location')
-        stalkers = data.get('stalkers')
-        return Peer(nickname=nickname, intra_id=intra_id, username=username, user_id=user_id,
-                    locations=locations, feedbacks=feedbacks, location=location, stalkers=stalkers,
-                    campus=campus, campus_id=campus_id, time_zone=time_zone)
+    async def get_peer(self, login: str, extended: bool = True) -> 'Peer':
+        peer_data = await Config.intra.get_peer(login=login)
+        if peer_data:
+            id = peer_data['id']
+            full_name = peer_data['displayname']
+            login = peer_data['login']
+            pool_month = peer_data.get('pool_month')
+            pool_year = peer_data.get('pool_year')
+            cursus_data = peer_data['cursus_users']
+            campus_id = [campus['campus_id'] for campus in peer_data['campus_users'] if campus['is_primary']][0]
+            campus, time_zone = [(campus['name'], campus['time_zone'])
+                                 for campus in peer_data['campus'] if campus['id'] == campus_id][0]
+            location = peer_data['location']
+            is_staff = peer_data['staff?']
+            avatar = peer_data['image_url']
+            link = f'https://profile.intra.42.fr/users/{login}'
+            status = '🟢 '
+            if not location:
+                status = '🔴 '
+            for cursus in cursus_data:
+                if cursus['cursus']['id'] == Config.cursus_id and cursus['end_at']:
+                    end_at = datetime.fromisoformat(cursus['end_at'].replace('Z', '+00:00'))
+                    if (end_at < datetime.now(timezone.utc)) and cursus['level'] < 16:
+                        status = '☠️ '
+                    break
+            coalition = username = last_seen_time = last_location = ''
+            if extended:
+                status, location, last_location, last_seen_time, coalition, username = \
+                    await self._get_extended_data(login=login, peer_id=id, location=location, status=status)
+            if is_staff:
+                status = '😎 '
+            peer_from_db = await Savers.get_peer(peer_id=id, login=login, campus_id=campus_id)
+            if peer_from_db.campus_id != campus_id:
+                await PeerDB.update_peer(peer_id=id, campus_id=campus_id)
+                await Cache().delete(key=f'User.get_user_data:{peer_from_db.user_id}')
+            return Peer(id=id, login=login, full_name=full_name, pool_month=pool_month, pool_year=pool_year,
+                        coalition=coalition, cursus_data=cursus_data, campus=campus, campus_id=campus_id,
+                        time_zone=time_zone, location=location, last_location=last_location, avatar=avatar, link=link,
+                        status=status, last_seen_time=last_seen_time, is_staff=is_staff, username=username)

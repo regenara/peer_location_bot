@@ -1,0 +1,214 @@
+{
+   "hello": {
+      "ru": "Привет, {login}!\n\n",
+      "en": "Hello, {login}!\n\n"
+   },
+   "languages":{
+      "ru": "en",
+      "en": "ru"
+   },
+   "help":{
+      "ru":"<code>login</code> - информация о пользователе\n<code>login1 login2 login3</code> - информация о пользователях (не более 5)\n<code>? login</code> - список 50 последних локаций пользователя\n<code>! login</code> - оценки пользователя\n<code># workplace</code> - пользователь за рабочим местом (#un-a1, # ox-d4, #er-f1 и т.д.)",
+      "en":"<code>login</code> - user information\n<code>login1 login2 login3</code> - information about users (no more than 5)\n<code>? login</code> - list of the user's last 50 locations\n<code>! login</code> - user evaluations\n<code># workplace</code> - user at the workplace (#un-a1, # ox-d4, #er-f1, etc)"
+   },
+   "not_found":{
+      "ru": "Пользователь <b>{login}</b> не найден! Проверь правильность введенных данных",
+      "en": "User <b>{login}</b> not found! Check the correctness of the input data"
+   },
+   "back":{
+      "ru": "Назад ⤴️",
+      "en": "Back ⤴️"
+   },
+   "user_info":{
+      "ru":{
+         "coalition":"Коалиция",
+         "campus":"Кампус",
+         "location":"Место",
+         "ask_adm":"Спроси в АДМ",
+         "piscine":"Бассейн",
+         "days":"д",
+         "hours":"ч",
+         "minutes":"м",
+         "unknown_location": "Не в кампусе",
+         "not_on_campus":"Не в кампусе. Последняя активность {days_gone}{hours_gone}{minutes_gone}назад [<code>{last_location}</code>]",
+         "just_now":"Последняя активность только что [<code>{last_location}</code>]"
+      },
+      "en":{
+         "coalition":"Coalition",
+         "campus":"Campus",
+         "location":"Location",
+         "ask_adm":"Ask ADM",
+         "piscine":"Pool",
+         "days":"d",
+         "hours":"h",
+         "minutes":"m",
+         "unknown_location": "Not on campus",
+         "not_on_campus":"Not on campus. Last seen {days_gone}{hours_gone}{minutes_gone}ago [<code>{last_location}</code>]",
+         "just_now":"Last seen just now [<code>{last_location}</code>]"
+      }
+   },
+   "not_logged": {
+      "ru": "{title}Пользователь еще не заходил в систему",
+      "en": "{title}The user has not logged in yet"
+   },
+   "free_locations":{
+      "ru":{
+         "title":"\uD83C\uDFEB <b>{campus_name}</b>\n<i>Информация актуальна на {now} (указано местное время кампуса)</i>\n<b>Мест занято</b>: {active}\n{body}",
+         "body":"Места, освободившиеся за последние 24 часа:\n",
+         "disclaimer":"<b>Не найдено!</b> <i>Но это лишь значит, что за последние 24 часа ни одно из мест не освободилось</i>"
+      },
+      "en":{
+         "title":"\uD83C\uDFEB <b>{campus_name}</b>\n<i>Information is current at {now} (local campus time)</i>\n<b>Locations taken:</b> {active}\n{body}",
+         "body":"Locations vacated in the last 24 hours:\n",
+         "disclaimer":"<b>Not found!</b> <i>But this only means that over the past 24 hours, none of the locations have become vacant</i>"
+      }
+   },
+   "projects":{
+      "ru":{
+         "cursus": "Выбери курс:",
+         "choose":"Выбери проект:",
+         "choose_campus": "Выбери кампус:",
+         "title":"\uD83D\uDC64 Пользователи кампуса <b>{campus_name}</b>, сдавшие проект <b>{project_name}</b> за последние {weeks} нед. (указано местное время кампуса):\n",
+         "not_found":"Никто из кампуса <b>{campus_name}</b> не сдавал проект <b>{project_name}</b> за последние {weeks} нед."
+      },
+      "en":{
+         "cursus": "Choose a course:",
+         "choose":"Choose a project:",
+         "choose_campus": "Choose a campus:",
+         "title":"\uD83D\uDC64 <b>{campus_name}</b> campus users who passed the project {project_name} in the last {weeks} weeks (local campus time)\n",
+         "not_found":"No one from <b>{campus_name}</b> campus has passed project <b>{project_name}</b> in the last {weeks} weeks."
+      }
+   },
+   "friends":{
+      "ru":{
+         "list":"Список друзей",
+         "no_friends":"Вы еще никого не добавили в друзья"
+      },
+      "en":{
+         "list":"Friends list",
+         "no_friends":"You haven't added anyone as a friend yet"
+      }
+   },
+   "observations":{
+      "ru":{
+         "on":"Уведомления включены: {login}",
+         "off":"Уведомления отключены: {login}",
+         "count":"Нельзя подключить уведомления для более 10 пользователей"
+      },
+      "en":{
+         "on":"Notifications are enabled: {login}",
+         "off":"Notifications are disabled: {login}",
+         "count":"You can't enable notifications for more than 10 users"
+      }
+   },
+   "friends_actions":{
+      "ru":{
+         "add":"Добавлен в друзья: {login}",
+         "remove":"Удален из друзей: {login}",
+         "count":"Нельзя добавить в друзья более 20 пользователей"
+      },
+      "en":{
+         "add":"Added as a friend: {login}",
+         "remove":"Removed from friends: {login}",
+         "count":"You can't add more than 20 users as friends"
+      }
+   },
+   "wait":{
+      "ru":"Один момент...",
+      "en":"One moment..."
+   },
+   "in_campus":{
+      "ru":"<code>{login}</code> в кампусе!\n<code>{current_location}</code>",
+      "en":"<code>{login}</code> is on campus!\n<code>{current_location}</code>"
+   },
+   "feedbacks":{
+      "ru":{
+         "mark":"Оценка",
+         "rating":"Рейтинг",
+         "final_mark":"Итоговая оценка",
+         "not_eval":"{title}Пользователь еще никого не оценивал",
+         "not_closed":"Проект еще не закрыт"
+      },
+      "en":{
+         "mark":"Mark",
+         "rating":"Rating",
+         "final_mark":"Final mark",
+         "not_eval":"{title}The user has not evaluated anyone yet",
+         "not_closed":"The project is not closed yet"
+      }
+   },
+   "menu":{
+      "ru":{
+         "friends":"Друзья \uD83E\uDD1D",
+         "locations":"Места \uD83D\uDCBA",
+         "projects":"Проекты \uD83D\uDCD5",
+         "settings":"Настройки \uD83D\uDEE0",
+         "about":"Исходники ⚙",
+         "donate":"Донаты \uD83D\uDCB8"
+      },
+      "en":{
+         "friends":"Friends \uD83E\uDD1D",
+         "locations":"Locations \uD83D\uDCBA",
+         "projects":"Projects \uD83D\uDCD5",
+         "settings":"Settings \uD83D\uDEE0",
+         "about":"About ⚙",
+         "donate":"Donate \uD83D\uDCB8"
+      }
+   },
+   "settings_menu":{
+      "ru":{
+         "language": "\uD83C\uDDF7\uD83C\uDDFA  Язык",
+         "show_avatar": "{status}  Отображать аватар",
+         "show_telegram": "{status}  Отображать твой телеграм",
+         "default_campus": "{status}  Кампус по умолчанию"
+      },
+      "en":{
+         "language": "\uD83C\uDDEC\uD83C\uDDE7  Language",
+         "show_avatar": "{status}  Show avatar",
+         "show_telegram": "{status}  Show your telegram",
+         "default_campus": "{status}  Use default campus"
+      }
+   },
+   "host":{
+      "ru":{
+         "last_user":"Сейчас здесь никого. Последний пользователь:\n",
+         "not_found":"Не найдено: <b>{host}</b>! Проверь правильность введенных данных"
+      },
+      "en":{
+         "last_user":"There's no one here right now. Last user:\n",
+         "not_found":"Not found: <b>{host}</b>! Check the correctness of the input data"
+      }
+   },
+   "now": {
+      "ru": "в данный момент",
+      "en": "now"
+   },
+   "antiflood":{
+      "ru":"\uD83D\uDEAB Дождись завершения предыдущего запроса!",
+      "en":"\uD83D\uDEAB Wait for the previous request to complete!"
+   },
+   "changed_language": {
+      "ru": "Язык изменен",
+      "en": "Language changed"
+   },
+   "need_auth":{
+      "ru": "Необходима авторизация",
+      "en": "Authorization required"
+   },
+   "auth": {
+      "ru": "Авторизация",
+      "en": "Authorization"
+   },
+   "donate_text": {
+      "ru": {
+         "donate_link": "Пожертвовать",
+         "title": "\uD83D\uDCB8 <b>Донаты на оплату сервера</b>\n\n<b>Собрано в этом месяце:</b> <code>{sum}/800.0руб</code>\n{nicknames}",
+         "tops": "<b>Топ донатеры:</b>\n{tops}"
+      },
+      "en": {
+         "donate_link": "Donate",
+         "title": "\uD83D\uDCB8 <b>Donates to pay for the server</b>\n\n<b>Money was donated this month:</b> <code>{sum}/800.0rub</code>\n{nicknames}",
+         "tops": "<b>Top donaters:</b>\n{tops}"
+      }
+   }
+}

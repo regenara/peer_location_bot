@@ -1,327 +1,363 @@
-from datetime import datetime
-from datetime import timedelta
+from datetime import (datetime,
+                      timedelta)
 from pytz import timezone
-from typing import Any
-from typing import Dict
+from typing import (List,
+                    Tuple,
+                    Union)
 
-from aiogram.utils.markdown import hide_link
+from aiogram.utils.markdown import (hbold,
+                                    hcode,
+                                    hide_link,
+                                    hitalic,
+                                    hlink)
 from aiogram.utils.parts import paginate
 
-from misc import intra_requests
-from misc import mongo
+from config import Config
+from db_models.campuses import Campus
+from db_models.donate import Donate
+from db_models.peers import Peer as PeerDB
+from db_models.users import User
 from models.feedback import Feedback
 from models.host import Host
 from models.peer import Peer
-from utils.helpers import get_data_from_message
-from utils.helpers import get_log_time
-from utils.helpers import get_peer_title
-from utils.helpers import get_str_time
-from utils.helpers import get_utc
+from utils.intra_api import (UnknownIntraError,
+                             NotFoundIntraError)
+from utils.savers import Savers
 
 
-async def peer_data_compile(nickname: str, peer_data_locale: dict,
-                            is_alone: bool, avatar: bool = False) -> Dict[str, Any]:
-    peer_data = await intra_requests.get_peer(nickname)
-    if peer_data.get('error') and '404' in peer_data['error']:
-        return {'text': peer_data_locale['not_found'].format(nickname=nickname.replace("<", "&lt")),
-                'error': True}
-    if peer_data.get('error'):
-        return {'text': f'<b>{nickname}</b>: {peer_data["error"]}', 'error': True}
-    peer = await Peer.from_dict(peer_data)
-    cursus = '\n'.join([f'<b>{c["cursus"]["name"]}:</b> {round(c["level"], 2)}' for c in peer.cursus_data])
-    coalition = ''
-    if peer.coalition:
-        coalition = f'<b>{peer_data_locale["coalition"]}:</b> {peer.coalition}\n'
-    pool = ''
-    if peer.pool:
-        pool = f'<b>{peer_data_locale["piscine"]}:</b> {peer.pool}\n'
-    if peer.is_staff:
-        peer.location = peer_data_locale['ask_adm']
-    if not peer.location:
-        peer.location = last_seen_time_compile(peer.last_seen_time, peer.last_location, peer_data_locale)
-    elif peer.location != peer_data_locale['ask_adm']:
-        peer.location = f'<code>{peer.location}</code>'
-    full_name = f'<b>{peer.full_name}</b>'
-    if is_alone:
-        full_name = f'<a href="{peer.link}">{peer.full_name}</a>'
-    username = ''
-    if peer.username:
-        username = f'<b>Telegram:</b> @{peer.username}\n'
-    text = f'{peer.status}{full_name} aka <code>{peer.nickname}</code>\n' \
-           f'{username}' \
-           f'{pool}' \
-           f'{coalition}' \
-           f'{cursus}\n' \
-           f'<b>{peer_data_locale["campus"]}:</b> {peer.campus}\n' \
-           f'<b>{peer_data_locale["location"]}:</b> {peer.location}'
-    if avatar and is_alone:
-        text = hide_link(peer.avatar) + text
-    return {'text': text}
+class TextCompile:
+    @staticmethod
+    async def _get_campus(campus_id: int) -> Campus:
+        try:
+            campus = await Savers.get_campus(campus_id=campus_id)
+        except (UnknownIntraError, NotFoundIntraError):
+            campus = Campus(id=campus_id, name=f'Campus id{campus_id}', time_zone='UTC')
+        return campus
+
+    @staticmethod
+    def _get_utc(iso_format: str) -> float:
+        if iso_format:
+            return datetime.fromisoformat(iso_format.replace('Z', '+00:00')).timestamp()
+        return 0
+
+    @staticmethod
+    def _get_str_time(iso_format: str, time_zone: str) -> str:
+        if iso_format:
+            return datetime.fromisoformat(iso_format.replace('Z', '+00:00')). \
+                astimezone(timezone(time_zone)).strftime('%H:%M  %d.%m.%y')
+
+    def _get_log_time(self, begin_at_iso: str, end_at_iso: str, time_zone: str, now: str) -> str:
+        begin_at = self._get_str_time(iso_format=begin_at_iso, time_zone=time_zone)
+        end_at = self._get_str_time(iso_format=end_at_iso, time_zone=time_zone) or now
+        log_time = f'{begin_at} - {end_at}'
+        if begin_at[7:] == end_at[7:]:
+            log_time = f'{begin_at[:5]} - {end_at[:5]}  {begin_at[7:]}'
+        return log_time
+
+    @staticmethod
+    def _get_peer_title(status: str, url: str, full_name: str, login: str) -> str:
+        return f'{status}{hlink(title=full_name, url=url)} aka {hcode(login)}\n'
+
+    def _get_title_from_message(self, message_text: str) -> str:
+        raws = message_text.splitlines()[0].split()
+        full_name = ' '.join(raws[1:-2])
+        login = raws[-1]
+        status = f'{raws[0]} '
+        url = f'https://profile.intra.42.fr/users/{login}'
+        return self._get_peer_title(status=status, url=url, full_name=full_name, login=login)
+
+    @staticmethod
+    def is_wrong_name(name: str) -> str:
+        if len(name) > 20:
+            return f'{name[:20]}...'
+        if len(name) < 2 or any(char in './\\#% \n?!' for char in name):
+            return name
+
+    async def peer_data_compile(self, user: User, login: str, is_single: bool) -> Tuple[Union[Peer, None], str]:
+        is_wrong = self.is_wrong_name(name=login)
+        if is_wrong:
+            return None, Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt"))
+        try:
+            peer = await Peer().get_peer(login=login)
+        except UnknownIntraError as e:
+            return None, f'{hbold(login, ":", sep="")} {e}'
+        except NotFoundIntraError:
+            return None, Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
+        courses = '\n'.join(
+            [f'{hbold(c["cursus"]["name"], ":", sep="")} {round(c["level"], 2)}' for c in peer.cursus_data])
+        coalition = ''
+        if peer.coalition:
+            coalition = f'{hbold(Config.local.coalition.get(user.language), ":", sep="")} {peer.coalition}\n'
+        pool = ''
+        if peer.pool_month and peer.pool_year:
+            months = {
+                'january': '01', 'february': '02', 'march': '03',
+                'april': '04', 'may': '05', 'june': '06',
+                'july': '07', 'august': '08', 'september': '09',
+                'october': '10', 'november': '11', 'december': '12'
+            }
+            pool = f'{hbold(Config.local.piscine.get(user.language), ":", sep="")} ' \
+                   f'{months[peer.pool_month]}.{peer.pool_year}\n'
+        peer_location = ''
+        if peer.is_staff:
+            peer_location = Config.local.ask_adm.get(user.language)
+        elif peer.location and not peer.is_staff:
+            peer_location = hcode(peer.location)
+        elif not peer.location:
+            peer_location = self._last_seen_time_compile(user=user, last_seen_time=peer.last_seen_time,
+                                                         last_location=peer.last_location)
+        full_name = hbold(peer.full_name)
+        if is_single:
+            full_name = hlink(title=peer.full_name, url=peer.link)
+        username = ''
+        if peer.username:
+            username = f'{hbold("Telegram:")} @{peer.username}\n'
+        title = f'{peer.status}{full_name} aka {hcode(peer.login)}\n'
+        campus = f'{hbold(Config.local.campus.get(user.language), ":", sep="")} {peer.campus}\n'
+        location = f'{hbold(Config.local.location.get(user.language), ":", sep="")} {peer_location}'
+        text = f'{title}' \
+               f'{username}' \
+               f'{pool}' \
+               f'{coalition}' \
+               f'{courses}\n' \
+               f'{campus}' \
+               f'{location}'
+        if user.show_avatar and is_single:
+            text = hide_link(url=peer.avatar) + text
+        return peer, text
+
+    @staticmethod
+    def _last_seen_time_compile(user: User, last_seen_time: str, last_location: str) -> str:
+        if not last_seen_time:
+            return Config.local.unknown_location.get(user.language)
+        seconds = datetime.now(timezone('UTC')).timestamp() - \
+            datetime.fromisoformat(last_seen_time.replace('Z', '+00:00')).timestamp()
+        seconds_in_day = int(timedelta(days=1).total_seconds())
+        seconds_in_hour = int(timedelta(hours=1).total_seconds())
+        seconds_in_minute = 60
+        days = int(seconds // seconds_in_day)
+        hours = int((seconds - (days * seconds_in_day)) // seconds_in_hour)
+        minutes = int((seconds - (days * seconds_in_day) - (hours * seconds_in_hour)) // seconds_in_minute)
+        days_gone = hours_gone = minutes_gone = ''
+        if days:
+            days_gone = f'{days}{Config.local.days.get(user.language)} '
+        if hours:
+            hours_gone = f'{hours}{Config.local.hours.get(user.language)} '
+        if minutes:
+            minutes_gone = f'{minutes}{Config.local.minutes.get(user.language)} '
+        if not any((days, hours, minutes)):
+            return Config.local.just_now.get(user.language, last_location=last_location)
+        return Config.local.not_on_campus.get(user.language, days_gone=days_gone, hours_gone=hours_gone,
+                                              minutes_gone=minutes_gone, last_location=last_location)
+
+    async def peer_locations_compile(self, user: User, login: str, page: int = 0,
+                                     message_text: str = None) -> Tuple[str, int]:
+        is_wrong = self.is_wrong_name(name=login)
+        if is_wrong:
+            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0
+        try:
+            locations = await Host().get_peer_locations(login=login)
+            if not page:
+                peer = await Peer().get_peer(login=login, extended=False)
+                title = self._get_peer_title(status=peer.status, url=peer.link,
+                                             full_name=peer.full_name, login=peer.login)
+            else:
+                title = self._get_title_from_message(message_text=message_text)
+        except UnknownIntraError as e:
+            return f'{hbold(login, ":", sep="")} {e}', 0
+        except NotFoundIntraError:
+            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0
+        if not locations:
+            return Config.local.not_logged.get(user.language, title=title), 0
+        count = len(locations[page * 10:])
+        locations = paginate(data=locations, page=page, limit=10)
+        texts = []
+        for location in locations:
+            campus = await self._get_campus(campus_id=location.campus_id)
+            log_time = self._get_log_time(begin_at_iso=location.begin_at, end_at_iso=location.end_at,
+                                          time_zone=campus.time_zone, now=Config.local.now.get(user.language))
+            text = f'{hbold(campus.name)} {hcode(location.host)}\n{log_time}'
+            texts.append(text)
+        return title + '\n'.join(texts), count
+
+    async def host_data_compile(self, user: User, host: str, page: int = 0) -> Tuple[str, Union[Peer, None]]:
+        is_wrong = self.is_wrong_name(name=host)
+        if is_wrong:
+            return Config.local.host_not_found.get(user.language, host=is_wrong.replace("<", "&lt")), None
+        try:
+            location_records = await Host().get_location_history(host=host)
+        except UnknownIntraError as e:
+            return f'{hbold(host, ":", sep="")} {e}', None
+        except NotFoundIntraError:
+            return Config.local.host_not_found.get(user.language, host=host.replace("<", "&lt")), None
+        if page < 3:
+            location = location_records[page]
+            peer, peer_text = await self.peer_data_compile(user=user, login=location.login, is_single=True)
+            last_peer = ''
+            if not peer:
+                peer_text = hcode(location.login)
+            else:
+                if location.end_at and not page:
+                    last_peer = Config.local.last_user.get(user.language)
+                else:
+                    lines = peer_text.splitlines()
+                    if page:
+                        peer_text = '\n'.join(lines)
+                    else:
+                        peer_text = '\n'.join(lines[:-2]).replace('🟢 ', '')
+            campus = await self._get_campus(campus_id=location.campus_id)
+            log_time = self._get_log_time(begin_at_iso=location.begin_at, end_at_iso=location.end_at,
+                                          time_zone=campus.time_zone, now=Config.local.now.get(user.language))
+            text = f'🖥 {hbold(campus.name)} {hcode(host)}\n{last_peer}' \
+                   f'🕰 {log_time}\n' \
+                   f'{peer_text}'
+            return text, Peer(id=location.peer_id, login=location.login)
+        texts = []
+        for location in location_records[3:]:
+            campus = await self._get_campus(campus_id=location.campus_id)
+            log_time = self._get_log_time(begin_at_iso=location.begin_at, end_at_iso=location.end_at,
+                                          time_zone=campus.time_zone, now=Config.local.now.get(user.language))
+            text = f'🖥 {hbold(campus.name)} {hcode(host)}\n' \
+                   f'🕰 {log_time}\n' \
+                   f'👤 {hcode(location.login)}'
+            texts.append(text)
+        return f'\n\n'.join(texts), None
+
+    async def peer_feedbacks_compile(self, user: User, login: str, page: int = 0,
+                                     message_text: str = None) -> Tuple[str, int]:
+        is_wrong = self.is_wrong_name(name=login)
+        if is_wrong:
+            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0
+        user.show_avatar = False
+        try:
+            feedbacks = await Feedback().get_peer_feedbacks(login=login)
+            if not page:
+                peer = await Peer().get_peer(login=login, extended=False)
+                title = self._get_peer_title(status=peer.status, url=peer.link,
+                                             full_name=peer.full_name, login=peer.login)
+            else:
+                title = self._get_title_from_message(message_text=message_text)
+        except UnknownIntraError as e:
+            return f'{hbold(login, ":", sep="")} {e}', 0
+        except NotFoundIntraError:
+            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0
+        if not feedbacks:
+            return Config.local.not_eval.get(user.language, title=title), 0
+        count = len(feedbacks[page * 5:])
+        feedbacks = paginate(data=feedbacks, page=page, limit=5)
+        texts = []
+        for feedback in feedbacks:
+            final_mark = feedback.final_mark
+            if final_mark is None:
+                final_mark = Config.local.not_closed.get(user.language)
+            text = f'{hbold(feedback.team)} [{feedback.project}]\n' \
+                   f'{hbold(login, ":", sep="")} {hitalic(feedback.corrector_comment)}\n' \
+                   f'{hbold(Config.local.mark.get(user.language), ":", sep="")} {feedback.mark}\n' \
+                   f'{feedback.peer}: {hitalic(feedback.peer_comment)}\n' \
+                   f'{hbold(Config.local.rating.get(user.language), ":", sep="")} {feedback.rating}/5\n' \
+                   f'{hbold(Config.local.final_mark.get(user.language), ":", sep="")} {final_mark}'
+            texts.append(text)
+        return title + f'\n{"—" * 20}\n'.join(texts), count
+
+    async def free_locations_compile(self, user: User, campus_id: int, page: int = 0) -> Tuple[str, int, int]:
+        campus = await self._get_campus(campus_id=campus_id)
+        try:
+            scan, active, inactive = await Config.intra.get_campus_locations(campus_id=campus_id,
+                                                                             time_zone=campus.time_zone)
+        except (UnknownIntraError, NotFoundIntraError) as e:
+            return f'{hbold(campus.name, ":", sep="")} {e}', 0, 0
+        locations = {}
+        for location in inactive:
+            if location['host'] not in locations:
+                locations.update({location['host']: location})
+        for location in active:
+            locations.pop(location['host'], '')
+        locations = list(locations.items())[:400]
+        locations.sort()
+        active = len(active)
+        now = self._get_str_time(datetime.fromtimestamp(scan).isoformat(), campus.time_zone)
+        count = len(locations[page * 40:])
+        while not count and page:
+            page -= 1
+            count = len(locations[page * 40:])
+        locations = paginate(data=locations, page=page, limit=40)
+        texts = []
+        for data in locations:
+            location = Host.from_dict(data=data[1])
+            end_at = self._get_str_time(iso_format=location.end_at, time_zone=campus.time_zone)
+            text = f'{hcode(location.host)}  |  {hcode(location.login)}  |  {end_at}'
+            texts.append(text)
+        body = Config.local.locations_disclaimer.get(user.language)
+        if texts:
+            body = Config.local.locations_body.get(user.language)
+        title = Config.local.locations_title.get(user.language, campus_name=campus.name, now=now, active=active,
+                                                 body=body)
+        return title + '\n'.join(texts), count, page
+
+    async def project_peers_compile(self, user: User, project_id: int, campus_id: int) -> str:
+        campus = await self._get_campus(campus_id=campus_id)
+        try:
+            weeks, project_data = await Config.intra.get_project_peers(project_id=project_id, campus_id=campus_id,
+                                                                       time_zone=campus.time_zone)
+        except (UnknownIntraError, NotFoundIntraError) as e:
+            return f'{hbold("Project id", project_id, ":", sep="")} {e}'
+        if not project_data:
+            project = await Savers.get_project(project_id=project_id)
+            project_name = project.name
+            return Config.local.project_not_found.get(user.language, campus_name=campus.name, weeks=weeks,
+                                                      project_name=project_name.replace("<", "&lt"))
+        project_data.sort(key=lambda key: self._get_utc(iso_format=key['marked_at']), reverse=True)
+        project_name = project_data[0]['project']['name']
+        title = Config.local.project_title.get(user.language, campus_name=campus.name,
+                                               project_name=project_name, weeks=weeks)
+        texts = []
+        for project in project_data[:40]:
+            login = project["user"]["login"]
+            url = f'https://profile.intra.42.fr/users/{login}'
+            marked_at = self._get_str_time(iso_format=project["marked_at"], time_zone=campus.time_zone)
+            text = f'{hlink(title=login, url=url)}  |  {project["final_mark"]}  |  {marked_at}'
+            texts.append(text)
+        return title + '\n'.join(texts)
+
+    @staticmethod
+    async def donate_text_compile(user: User) -> str:
+        this_month_donates = await Donate.get_last_month_donate()
+        tops = await Donate.get_top_donaters()
+        sums = []
+        nicknames = []
+        [[sums.append(donate.sum), nicknames.append(f'{hbold(donate.nickname, ":", sep="")} {hcode(donate.sum)}')]
+         for donate in this_month_donates]
+        top_nicknames = '\n'.join([f'{hbold(nickname, ":", sep="")} {hcode(sum_)}' for nickname, sum_ in tops])
+        text = Config.local.donate_text_title.get(user.language, sum=round(sum(sums), 2),
+                                                  nicknames='\n'.join(nicknames))
+        if top_nicknames:
+            text = text + '\n\n' + Config.local.donate_text_tops.get(user.language, tops=top_nicknames)
+        return text
+
+    @staticmethod
+    def friends_list_normalization(user: User, message_text: str, friends: List[PeerDB]) -> str:
+        friends_data = message_text.split('\n\n')
+        friend_logins = [friend.login for friend in friends]
+        friends_list = [s for s in friends_data[1:] if any(x in s for x in friend_logins)]
+        new_friends_list = []
+        for data in friends_list:
+            strings = []
+            lines = data.splitlines()
+            if len(lines) > 1:
+                for i, string in enumerate(lines):
+                    if not i:
+                        strings.append(f'{hbold(string[:string.index("aka")])}'
+                                       f'aka {hcode(string[string.index("aka") + 4:])}')
+                    else:
+                        strings.append(f'{hbold(string[:string.index(":") + 1])}{string[string.index(":") + 1:]}')
+            else:
+                string = lines[0]
+                strings.append(f'{hbold(string[:string.index(":") + 1])}{string[string.index(":") + 1:]}')
+            new_friends_list.append('\n'.join(strings))
+        if new_friends_list:
+            new_friends_list.insert(0, hbold(friends_data[0]))
+            return '\n\n'.join(new_friends_list)
+        return Config.local.no_friends.get(user.language)
 
 
-def last_seen_time_compile(last_seen_time: float, last_location: str, peer_data_locale: dict) -> str:
-    if not last_seen_time:
-        text = peer_data_locale['not_on_campus']
-        return text[:text.index('.')]
-    seconds = datetime.now(timezone('UTC')).timestamp() - last_seen_time
-    seconds_in_day = int(timedelta(days=1).total_seconds())
-    seconds_in_hour = int(timedelta(hours=1).total_seconds())
-    seconds_in_minute = 60
-    days = int(seconds // seconds_in_day)
-    hours = int((seconds - (days * seconds_in_day)) // seconds_in_hour)
-    minutes = int((seconds - (days * seconds_in_day) - (hours * seconds_in_hour)) // seconds_in_minute)
-    days_gone = ''
-    hours_gone = ''
-    minutes_gone = ''
-    if days:
-        days_gone = f'{days}{peer_data_locale["days"]} '
-    if hours:
-        hours_gone = f'{hours}{peer_data_locale["hours"]} '
-    if minutes:
-        minutes_gone = f'{minutes}{peer_data_locale["minutes"]} '
-    if not any((days, hours, minutes)):
-        return peer_data_locale['just_now'].format(last_location=last_location)
-    return peer_data_locale['not_on_campus'].format(days_gone=days_gone, hours_gone=hours_gone,
-                                                    minutes_gone=minutes_gone, last_location=last_location)
-
-
-async def peer_locations_compile(nickname: str, peer_locations_locale: dict, page: int = 0,
-                                 message_text: str = None) -> Dict[str, Any]:
-    peer_locations_data = {}
-    locations = []
-    if not page:
-        locations_data = await intra_requests.get_peer_locations(nickname)
-        if isinstance(locations_data, dict) and locations_data.get('error'):
-            if '404' not in locations_data['error']:
-                return {'text': f'<b>{nickname}</b>: {locations_data["error"]}', 'count': -1}
-            return {'text': peer_locations_locale['not_found'].format(nickname=nickname.replace("<", "&lt")),
-                    'count': -1}
-        peer_data = await intra_requests.get_peer(nickname)
-        peer = await Peer.from_dict(peer_data)
-        title = get_peer_title(peer.status, peer.link, peer.full_name, peer.nickname)
-        if not locations_data:
-            return {'text': title + peer_locations_locale['not_logged'], 'count': 0}
-        for location in locations_data:
-            locations.append(await Host.from_dict(location))
-        count = len(locations_data)
-        data = []
-        for location in locations[10:]:
-            data.append({'campus': location.campus_name, 'host': location.host,
-                         'begin_at': location.begin_at, 'end_at': location.end_at})
-        if data:
-            await mongo.update('peers', {'nickname': peer.nickname}, 'set', {'locations': data}, upsert=True)
-        locations = locations[:10]
-        peer_locations_data.update({'count': count})
-    else:
-        title = get_peer_title(*get_data_from_message(message_text))
-        data = await mongo.find('peers', {'nickname': nickname})
-        count = len(data['locations'][(page - 1) * 5:])
-        for location in paginate(data['locations'], page - 1, 10):
-            locations.append(Host.from_db(location))
-        peer_locations_data.update({'count': count})
-    texts = []
-    for location in locations:
-        text = f'<b>{location.campus_name}</b> <code>{location.host}</code>\n' \
-               f'{get_log_time(location.begin_at, location.end_at, peer_locations_locale["now"])}'
-        texts.append(text)
-    peer_locations_data.update({'text': title + f'\n'.join(texts)})
-    return peer_locations_data
-
-
-async def host_data_compile(host_name: str, host_data_locale: dict, peer_data_locale: dict,
-                            avatar: bool, page: int = 0, campus_name: str = None) -> Dict[str, Any]:
-    if not page:
-        host_data = await intra_requests.get_host(host_name)
-        if not host_data:
-            return {'text': host_data_locale['not_found'].format(host=host_name), 'error': True}
-        if isinstance(host_data, dict) and host_data.get('error'):
-            return {'text': f'<b>{host_name}</b>: {host_data["error"]}', 'error': True}
-        hosts = []
-        for host in host_data:
-            hosts.append(await Host.from_dict(host))
-        data = []
-        for host in hosts:
-            data.append({'peer': host.peer, 'begin_at': host.begin_at, 'end_at': host.end_at})
-        await mongo.update('campuses', {'name': hosts[0].campus_name},
-                           'set', {f'hosts.{hosts[0].host}': data}, upsert=True)
-        host = hosts[0]
-        campus_name = host.campus_name
-    else:
-        campus_data = await mongo.find('campuses', {'name': campus_name})
-        data = campus_data['hosts'][host_name]
-        campus_name = campus_data["name"]
-        if page > 2:
-            texts = []
-            title = f'🖥 <b>{campus_data["name"]}</b> <code>{host_name}</code>\n'
-            for host in data[3:]:
-                log_time = get_log_time(host['begin_at'], host['end_at'], host_data_locale['now'])
-                text = f'<code>{host["peer"]}</code>\n' \
-                       f'{log_time}'
-                texts.append(text)
-            return {'text': title + '\n'.join(texts), 'host': host_name, 'several': True}
-        else:
-            host = Host.from_db(data, page)
-    peer_data = await peer_data_compile(host.peer, peer_data_locale, True, avatar)
-    if peer_data.get('error'):
-        peer = host.peer
-        peer_text = peer_data['text']
-    else:
-        lines = peer_data['text'].splitlines()
-        peer_text = '\n'.join(lines[1:-2])
-        peer = lines[0].replace('🟢 ', '')
-        if host.end_at:
-            peer_text = '\n'.join(lines[1:])
-            peer = lines[0]
-    if not page and host.end_at:
-        peer = f'{host_data_locale["last_user"]}\n{peer}'
-    log_time = get_log_time(host.begin_at, host.end_at, host_data_locale['now'])
-    text = f'🖥 <b>{campus_name}</b> <code>{host_name}</code>\n' \
-           f'{peer}\n' \
-           f'{log_time}\n' \
-           f'{peer_text}'
-    return {'text': text, 'peer': host.peer, 'host': host_name, 'campus': campus_name}
-
-
-async def peer_feedbacks_compile(nickname: str, peer_feedbacks_locale: dict,
-                                 page: int = 0, message_text: str = None) -> Dict[str, Any]:
-    peer_feedbacks_data = {}
-    feedbacks = []
-    if not page:
-        feedbacks_data = await intra_requests.get_peer_feedbacks(nickname)
-        if isinstance(feedbacks_data, dict) and feedbacks_data.get('error'):
-            if '404' not in feedbacks_data['error']:
-                return {'text': f'<b>{nickname}</b>: {feedbacks_data["error"]}', 'count': -1}
-            return {'text': peer_feedbacks_locale['not_found'].format(nickname=nickname.replace("<", "&lt")),
-                    'count': -1}
-        peer_data = await intra_requests.get_peer(nickname)
-        peer = await Peer.from_dict(peer_data)
-        title = get_peer_title(peer.status, peer.link, peer.full_name, peer.nickname)
-        if not feedbacks_data:
-            return {'text': title + peer_feedbacks_locale['not_eval'], 'count': 0}
-        for feedback in feedbacks_data:
-            feedback_data = await Feedback.from_dict(feedback)
-            if feedback_data:
-                feedbacks.append(feedback_data)
-        count = len(feedbacks)
-        data = []
-        for feedback in feedbacks[5:]:
-            data.append({'corrector_comment': feedback.corrector_comment, 'mark': feedback.mark, 'team': feedback.team,
-                         'project': feedback.project, 'peer_nickname': feedback.peer_nickname,
-                         'peer_link': feedback.peer_link, 'peer_comment': feedback.peer_comment,
-                         'rating': feedback.rating, 'final_mark': feedback.final_mark})
-        if data:
-            await mongo.update('peers', {'nickname': peer.nickname}, 'set', {'feedbacks': data}, upsert=True)
-        feedbacks = feedbacks[:5]
-        peer_feedbacks_data.update({'count': count})
-    else:
-        title = get_peer_title(*get_data_from_message(message_text))
-        data = await mongo.find('peers', {'nickname': nickname})
-        count = len(data['feedbacks'][(page - 1) * 5:])
-        for feedback in paginate(data['feedbacks'], page - 1, 5):
-            feedbacks.append(Feedback.from_db(feedback))
-        peer_feedbacks_data.update({'count': count})
-    texts = []
-    for feedback in feedbacks:
-        link = f'<a href="{feedback.peer_link}">{feedback.peer_nickname}</a>'
-        final_mark = feedback.final_mark
-        if final_mark is None:
-            final_mark = peer_feedbacks_locale["not_closed"]
-        text = f'<b>{feedback.team}</b> [{feedback.project}]\n' \
-               f'<b>{nickname}:</b> <i>{feedback.corrector_comment}</i>\n' \
-               f'<b>{peer_feedbacks_locale["mark"]}:</b> {feedback.mark}\n' \
-               f'{link}: <i>{feedback.peer_comment}</i>\n' \
-               f'<b>{peer_feedbacks_locale["rating"]}:</b> {feedback.rating}/5\n' \
-               f'<b>{peer_feedbacks_locale["final_mark"]}:</b> ' \
-               f'{final_mark}'
-        texts.append(text)
-    peer_feedbacks_data.update({'text': title + f'\n{"—" * 20}\n'.join(texts)})
-    return peer_feedbacks_data
-
-
-async def free_locations_compile(campus_id: int, free_locations_locale: dict, page: int = 0) -> Dict[str, Any]:
-    campus_data = await mongo.find('campuses', {'id': campus_id})
-    if not campus_data:
-        locations_data = None
-        campus = await intra_requests.get_campus(campus_id)
-        if campus.get('error'):
-            return {'error': campus['error'], 'count': -1, 'scan_time': 0}
-        time_zone = campus['time_zone']
-        campus_name = campus['name']
-        campus_data = {'time_zone': time_zone, 'name': campus_name}
-    else:
-        locations_data = campus_data.get('locations')
-        time_zone = campus_data['time_zone']
-        campus_name = campus_data['name']
-        campus_data = {}
-    three_minutes_ago = (datetime.now(timezone('UTC')) - timedelta(minutes=3)).timestamp()
-    if not locations_data or locations_data['last_scan'] < three_minutes_ago:
-        scan_time = datetime.now(timezone(time_zone))
-        page = 0
-        hours = 12
-        pages = 4
-        if 9 > scan_time.hour >= 0 or scan_time.hour > 21:
-            hours = 24
-            pages = 7
-        past = scan_time - timedelta(hours=hours)
-        locations = await intra_requests.get_campus_locations(campus_id, past, scan_time, pages)
-        inactive = locations['inactive']
-        active = locations['active']
-        error = locations.get('error')
-        if not error:
-            locations = {}
-            for location in inactive:
-                if location['host'] not in locations:
-                    locations.update({location['host']: {'peer': location['user']['login'],
-                                                         'end_at': location['end_at']}})
-            for location in active:
-                locations.pop(location['host'], '')
-            locations = list(locations.items())[:400]
-            locations.sort()
-            active = len(active)
-            campus_data.update({'locations': {'last_scan': scan_time.timestamp(), 'data': locations,
-                                              'active': active, 'hours': hours}})
-            await mongo.update('campuses', {'id': campus_id}, 'set', campus_data, upsert=True)
-        else:
-            return {'error': locations['error'], 'count': -1, 'scan_time': 0}
-    else:
-        locations = locations_data['data']
-        active = locations_data['active']
-        hours = locations_data['hours']
-        scan_time = datetime.fromtimestamp(locations_data['last_scan'])
-    title = free_locations_locale['title'].format(campus_name=campus_name,
-                                                  now=get_str_time(scan_time.isoformat(), time_zone),
-                                                  active=active)
-    texts = []
-    count = len(locations[40 * page:])
-    for location in paginate(locations, page, 40):
-        text = f'<code>{location[0]}</code>  |  ' \
-               f'<code>{location[1]["peer"]}</code>  |  ' \
-               f'{get_str_time(location[1]["end_at"], time_zone)}'
-        texts.append(text)
-    body = free_locations_locale['disclaimer'].format(hours=hours)
-    if texts:
-        body = free_locations_locale['body'].format(hours=hours)
-    return {'text': title + body + '\n'.join(texts), 'count': count,
-            'page': page, 'scan_time': int(scan_time.timestamp())}
-
-
-async def project_peers_compile(project_id: int, campus_id: int, campus_name: str,
-                                time_zone: str, projects_locale: dict) -> Dict[str, Any]:
-    project_data = await intra_requests.get_project_peers(project_id, campus_id, time_zone)
-    if project_data.get('error'):
-        return {'error': project_data['error']}
-    weeks = project_data['weeks']
-    title = projects_locale['not_found'].format(campus_name=campus_name, weeks=weeks)
-    if project_data['data']:
-        project_data['data'].sort(key=lambda key: get_utc(key['marked_at']), reverse=True)
-        project_name = project_data['data'][0]['project']['name']
-        title = projects_locale['title'].format(campus_name=campus_name, project_name=project_name, weeks=weeks)
-    texts = []
-    for project in project_data['data'][:50]:
-        nickname = project["user"]["login"]
-        link = f'<a href="https://profile.intra.42.fr/users/{nickname}">{nickname}</a>'
-        text = f'{link}  |  ' \
-               f'{project["final_mark"]}  |  ' \
-               f'{get_str_time(project["marked_at"], time_zone)}'
-        texts.append(text)
-    return {'text': title + '\n'.join(texts)}
+text_compile = TextCompile()
