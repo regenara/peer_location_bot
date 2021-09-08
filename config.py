@@ -23,12 +23,13 @@ def read_json(path_to_file: str) -> Dict[str, str]:
 class Config:
     admin: int = int(getenv('ADMIN', '373749366'))
     api_token: str = getenv('API_TOKEN')
+    webhook_url: str = getenv('WEBHOOK_URL')
 
     fernet: Fernet = None
     salt: str = getenv('SALT', '5j3I1xNcCpo2ZfFAkVMVpk6mRMpBmXqWXU7udHUgFtY=')
 
     db_url = getenv('DB_URL', 'driver://user:pass@localhost/dbname')
-    db: db_models.Gino = None
+    db: db_models.Gino = db_models.db
     redis_url = getenv('REDIS_URL', 'redis://localhost:6379')
     redis: RedisCache = None
 
@@ -52,7 +53,6 @@ class Config:
         cls.application = await Application.get_main() if not cls.test else await Application.get_test()
         cls.intra = IntraAPI(config=cls, test=cls.test)
         await cls.intra.load()
-        await cls.intra.start()
         courses = await Courses.get_courses()
         cls.courses = {cursus.id: cursus.name for cursus in courses}
         cls.cursus_id = [cursus.id for cursus in courses if cursus.is_primary][0]
@@ -64,6 +64,6 @@ class Config:
     @classmethod
     async def stop(cls):
         await cls.db.pop_bind().close()
+        await cls.redis.close()
         await cls.intra.session.close()
-        await cls.intra.stop()
         await cls.sub_apps.stop()
