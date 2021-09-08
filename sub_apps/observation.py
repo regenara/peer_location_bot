@@ -37,6 +37,7 @@ class Observation:
         from misc import bot
 
         for login, user_ids in observables:
+            self._logger.info('Start observation process for peer=%s', login)
             try:
                 peer = await self._intra.get_peer(login=login)
             except (NotFoundIntraError, UnknownIntraError) as e:
@@ -71,7 +72,7 @@ class Observation:
                         except ChatNotFound as e:
                             self._logger.error('ChatNotFound user=%s %s',
                                                user.username or user.id, e)
-            await asyncio.sleep(1)
+                self._logger.info('Complete observation process for peer=%s', login)
 
     async def observation(self):
         while True:
@@ -83,8 +84,9 @@ class Observation:
                 await self._send_notifications(observables=observables)
                 offset += 100
                 observables = await self._get_observables(limit=100, offset=offset)
+            self._logger.info('Complete observation')
             passed_seconds = (datetime.now() - now).seconds
-            if passed_seconds < 900:
-                sleep = 900 - passed_seconds
+            if passed_seconds < 600:
+                sleep = 600 - passed_seconds
                 self._logger.info('Sleep %s seconds after observation', sleep)
                 await asyncio.sleep(sleep)

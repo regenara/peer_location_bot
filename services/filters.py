@@ -1,3 +1,5 @@
+from typing import Union
+
 from aiogram.dispatcher.filters.filters import BoundFilter
 from aiogram.dispatcher.handler import ctx_data
 from aiogram.types import (CallbackQuery,
@@ -13,12 +15,7 @@ class IsUnauthorized(BoundFilter):
     def __init__(self, is_unauthorized):
         self.is_unauthorized = is_unauthorized
 
-    async def check(self, message: Message) -> bool:
-        # from db_models.donate import Donate
-        # from db_models.campuses import Campus
-        # print(await Donate.get_top_donaters())
-        # print(await Donate.get_last_month_donate())
-        # print(await Campus.create_campus(campus_id=777, name='test', time_zone='sdf'))
+    async def check(self, message: Union[Message, CallbackQuery]) -> bool:
         data = ctx_data.get()
         return not data['user_data']
 

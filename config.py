@@ -47,7 +47,7 @@ class Config:
 
     @classmethod
     async def start(cls):
-        cls.fernet = Fernet(bytes(cls.salt.encode('utf-8')))
+        cls.fernet = Fernet(cls.salt.encode())
         await db_models.db.set_bind(bind=cls.db_url, min_size=1)
         cls.redis = Cache.from_url(cls.redis_url)
         cls.application = await Application.get_main() if not cls.test else await Application.get_test()
@@ -59,11 +59,9 @@ class Config:
         cls.local = Localization()
         cls.local.load(data=read_json(cls.localization))
         cls.sub_apps = SubApps(intra=cls.intra, local=cls.local)
-        await cls.sub_apps.start()
 
     @classmethod
     async def stop(cls):
         await cls.db.pop_bind().close()
         await cls.redis.close()
         await cls.intra.session.close()
-        await cls.sub_apps.stop()
