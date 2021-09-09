@@ -24,7 +24,7 @@ from utils.text_compile import text_compile
 async def action_peer(user: User, message: Message, method: Callable, action: str,
                       limit: int, stop: int) -> Tuple[str, InlineKeyboardMarkup]:
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
-    login = message.text[1:].lower().strip().replace('@', '')
+    login = message.text[1:].lower()
     message = await message.answer(Config.local.wait.get(user.language))
     text, count = await method(user=user, login=login)
     keyboard = pagination_keyboard(action=action, count=count, content=login, limit=limit, stop=stop)
@@ -32,6 +32,18 @@ async def action_peer(user: User, message: Message, method: Callable, action: st
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
     return text, keyboard
+
+
+@dp.message_handler(lambda message: message.text.startswith('@') and len(message.text) > 2, state='granted')
+async def peer_data_from_username(message: Message, user_data: Tuple[Campus, Peer, User]):
+    *_, user = user_data
+    username = message.text[1:].lower().strip()
+    login = await User.get_login_from_username(username=username)
+    if not login:
+        await message.answer(Config.local.not_found_username.get(user.language, username=username.replace("<", "&lt")))
+    else:
+        message.text = login
+        await peer_data(message=message, user_data=user_data)
 
 
 @dp.message_handler(lambda message: message.text.startswith('?') and len(message.text) > 2, state='granted')
@@ -72,7 +84,7 @@ async def host_data(message: Message, user_data: Tuple[Campus, Peer, User]):
 async def peer_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
-    login = message.text.lower().replace('@', '').strip()
+    login = message.text.lower()
     keyboard = None
     peer, text = await text_compile.peer_data_compile(user=user, login=login, is_single=True)
     if peer:

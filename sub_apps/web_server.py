@@ -70,7 +70,8 @@ class WebServer:
                            user_from_peer: User) -> Tuple[User, str]:
         keys = [f'User.get_user_from_peer:{peer_id}', f'User.get_user_data:{new_user_id}']
         if user_from_peer:
-            keys.append(f'User.get_user_data:{user_from_peer.id}')
+            keys.extend((f'User.get_user_data:{user_from_peer.id}',
+                        f'User.get_login_from_username:{user_from_peer.username.lower()}'))
         user = await bot.get_chat(chat_id=new_user_id)
         user_from_id = await User.get(new_user_id)
         show_avatar = user_from_peer.show_avatar if user_from_peer else False
@@ -110,9 +111,8 @@ class WebServer:
             access_token = await Config.intra.auth(client_id=Config.application.client_id,
                                                    client_secret=Config.application.client_secret,
                                                    code=code)
-            headers = {'Authorization': f'Bearer {access_token}'}
             try:
-                peer = await Config.intra.get_me(headers=headers)
+                peer = await Config.intra.get_me(access_token=access_token)
             except UnknownIntraError as e:
                 self._logger.error('Failed get me token=%s user_id=%s, %s',
                                    access_token, user_id, e)

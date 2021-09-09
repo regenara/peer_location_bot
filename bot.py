@@ -17,7 +17,6 @@ from services.filters import (IsIntrovert,
                               IsBackToCourses,
                               IsBackToCampusesFromCourses,
                               IsBackToCampusesFromLocations)
-from sub_apps.sub_apps import SubApps
 from sub_apps.web_server import WebServer
 
 for custom_filter in (IsIntrovert,
@@ -34,7 +33,6 @@ for custom_filter in (IsIntrovert,
 async def on_startup(app):
     await Config.start()
     await Config.sub_apps.start()
-    await SubApps(intra=Config.intra, local=Config.local).start()
     webhook = await bot.get_webhook_info()
     if webhook.url != Config.webhook_url:
         if not webhook.url:

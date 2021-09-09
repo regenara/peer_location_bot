@@ -8,12 +8,16 @@
       "en": "ru"
    },
    "help":{
-      "ru":"<code>login</code> - информация о пользователе\n<code>login1 login2 login3</code> - информация о пользователях (не более 5)\n<code>? login</code> - список 50 последних локаций пользователя\n<code>! login</code> - оценки пользователя\n<code># workplace</code> - пользователь за рабочим местом (#un-a1, # ox-d4, #er-f1 и т.д.)",
-      "en":"<code>login</code> - user information\n<code>login1 login2 login3</code> - information about users (no more than 5)\n<code>? login</code> - list of the user's last 50 locations\n<code>! login</code> - user evaluations\n<code># workplace</code> - user at the workplace (#un-a1, # ox-d4, #er-f1, etc)"
+      "ru":"<code>login</code> - информация о пире\n<code>login1 login2 login3</code> - информация о пирах (не более 5)\n<code>? login</code> - список 50 последних локаций пира\n<code>! login</code> - оценки пира\n<code># workplace</code> - пир за рабочим местом (#un-a1, # ox-d4, #er-f1 и т.д.)\n<code>@username</code> - поиск пира через юзернейм Телеграма. Работает если пир зарегистрирован в боте и у него включена функция \"Отображать Телеграм\"",
+      "en":"<code>login</code> - peer information\n<code>login1 login2 login3</code> - information about peers (no more than 5)\n<code>? login</code> - list of the peer's last 50 locations\n<code>! login</code> - peer evaluations\n<code># workplace</code> - peer at the workplace (#un-a1, # ox-d4, #er-f1, etc)\n<code>@username</code> - peer search via Telegram username. Works if the peer is registered in the bot and has the \"Show Telegram\" function enabled"
    },
    "not_found":{
       "ru": "Пользователь <b>{login}</b> не найден! Проверь правильность введенных данных",
       "en": "User <b>{login}</b> not found! Check the correctness of the input data"
+   },
+   "not_found_username":{
+      "ru": "Пользователь @{username} не зарегистрирован в боте или у него отключена функция \"Отображать Телеграм\"",
+      "en": "User @{username} is not registered in the bot or has disabled the \"Show Telegram\" function"
    },
    "back":{
       "ru": "Назад ⤴️",
@@ -159,13 +163,13 @@
       "ru":{
          "language": "\uD83C\uDDF7\uD83C\uDDFA  Язык",
          "show_avatar": "{status}  Отображать аватар",
-         "show_telegram": "{status}  Отображать твой телеграм",
+         "show_telegram": "{status}  Отображать твой Телеграм",
          "default_campus": "{status}  Кампус по умолчанию"
       },
       "en":{
          "language": "\uD83C\uDDEC\uD83C\uDDE7  Language",
          "show_avatar": "{status}  Show avatar",
-         "show_telegram": "{status}  Show your telegram",
+         "show_telegram": "{status}  Show your Telegram",
          "default_campus": "{status}  Use default campus"
       }
    },
