@@ -190,6 +190,8 @@ class TextCompile:
             return f'{hbold(host, ":", sep="")} {e}', None
         except NotFoundIntraError:
             return Config.local.host_not_found.get(user.language, host=host.replace("<", "&lt")), None
+        if not location_records:
+            return Config.local.host_not_found.get(user.language, host=host.replace("<", "&lt")), None
         if page < 3:
             location = location_records[page]
             peer, peer_text = await self.peer_data_compile(user=user, login=location.login, is_single=True)

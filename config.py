@@ -51,7 +51,7 @@ class Config:
         await db_models.db.set_bind(bind=cls.db_url, min_size=1)
         cls.redis = Cache.from_url(cls.redis_url)
         cls.application = await Application.get_main() if not cls.test else await Application.get_test()
-        cls.intra = IntraAPI(config=cls, test=cls.test)
+        cls.intra = IntraAPI(config=cls)
         await cls.intra.load()
         courses = await Courses.get_courses()
         cls.courses = {cursus.id: cursus.name for cursus in courses}

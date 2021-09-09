@@ -36,12 +36,11 @@ class NotFoundIntraError(IntraAPIError):
 
 
 class IntraAPI:
-    def __init__(self, config, test: bool = False):
+    def __init__(self, config):
         self._apps: Deque[Dict[str, Any]] = deque()
         self._base_url = 'https://api.intra.42.fr/v2/'
         self._auth_url = 'https://api.intra.42.fr/oauth/token'
         self._config = config
-        self._test = test
         self._refresher = None
         self._logger = logging.getLogger('IntraAPI')
 
@@ -117,7 +116,7 @@ class IntraAPI:
         raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
 
     async def load(self):
-        applications = await Application.get_all() if not self._test else [await Application.get_test()]
+        applications = await Application.get_all() if not self._config.test else [await Application.get_test()]
         self._apps = deque(maxlen=len(applications))
         for application in applications:
             access_token = await self._get_token(application_id=application.id,

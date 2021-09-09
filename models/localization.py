@@ -1,7 +1,8 @@
-from enum import Enum
 from dataclasses import dataclass
 from typing import (Dict,
                     Union)
+
+from db_models.users import Languages as Lang
 
 
 @dataclass
@@ -9,7 +10,7 @@ class Languages:
     ru: Union[str, Dict[str, str]] = None
     en: Union[str, Dict[str, str]] = None
 
-    def get(self, lang: Union[Enum, str], **kwargs) -> Union[str, Dict[str, str]]:
+    def get(self, lang: Union[Lang, str], **kwargs) -> Union[str, Dict[str, str]]:
         if hasattr(lang, 'value'):
             lang = lang.value
         value = getattr(self, lang)

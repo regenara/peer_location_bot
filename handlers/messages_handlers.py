@@ -24,7 +24,7 @@ from utils.text_compile import text_compile
 async def action_peer(user: User, message: Message, method: Callable, action: str,
                       limit: int, stop: int) -> Tuple[str, InlineKeyboardMarkup]:
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
-    login = message.text[1:].lower()
+    login = message.text[1:].lower().strip()
     message = await message.answer(Config.local.wait.get(user.language))
     text, count = await method(user=user, login=login)
     keyboard = pagination_keyboard(action=action, count=count, content=login, limit=limit, stop=stop)
@@ -84,7 +84,7 @@ async def host_data(message: Message, user_data: Tuple[Campus, Peer, User]):
 async def peer_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
-    login = message.text.lower()
+    login = message.text.lower().strip()
     keyboard = None
     peer, text = await text_compile.peer_data_compile(user=user, login=login, is_single=True)
     if peer:
