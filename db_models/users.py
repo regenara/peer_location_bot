@@ -55,6 +55,12 @@ class User(db.Model, TimeMixin):
         return await cls.query.select_from(Peer.join(User)).where(Peer.id == peer_id).gino.first()
 
     @classmethod
+    @cache()
+    async def get_login_from_username(cls, username: str) -> str:
+        return await Peer.query.select_from(Peer.join(cls)).where(
+            (db.func.lower(cls.username) == username) & (cls.show_me.is_(True))).gino.load(Peer.login).first()
+
+    @classmethod
     @cache(serialization=True)
     async def get_user_data(cls, user_id: int) -> Tuple[Campus, Peer, 'User']:
         query = db.select([Campus, Peer, cls]).select_from(Campus.join(Peer).join(cls)).where(Peer.user_id == user_id)
@@ -68,10 +74,11 @@ class User(db.Model, TimeMixin):
                                 show_me=show_me, use_default_campus=use_default_campus)
 
     @classmethod
-    @del_cache(keys=['User.get_user_data'])
     async def update_user(cls, user_id: int, **kwargs) -> 'User':
         user = await cls.get(user_id)
         await user.update(**kwargs).apply()
         peer = await Peer.query.select_from(Peer.join(User)).where(Peer.user_id == user_id).gino.first()
-        await Cache().delete(key=f'User.get_user_from_peer:{peer.id}')
+        [await Cache().delete(key=key) for key in (f'User.get_user_data:{user_id}',
+                                                   f'User.get_user_from_peer:{peer.id}',
+                                                   f'User.get_login_from_username:{user.username.lower()}')]
         return user

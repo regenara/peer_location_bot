@@ -29,6 +29,7 @@ class Localization:
     in_campus = Languages()
     antiflood = Languages()
     not_found = Languages()
+    not_found_username = Languages()
     now = Languages()
     not_logged = Languages()
 
@@ -115,6 +116,8 @@ class Localization:
         self.antiflood.en = data['antiflood']['en']
         self.not_found.ru = data['not_found']['ru']
         self.not_found.en = data['not_found']['en']
+        self.not_found_username.ru = data['not_found_username']['ru']
+        self.not_found_username.en = data['not_found_username']['en']
         self.now.ru = data['now']['ru']
         self.now.en = data['now']['en']
         self.not_logged.ru = data['not_logged']['ru']

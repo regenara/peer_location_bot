@@ -34,7 +34,7 @@ class Config:
     redis: RedisCache = None
 
     redirect_uri = getenv('REDIRECT_URI', 'http://localhost:8081/')
-    test = str(getenv('TEST', False)).lower() in ('true', '1', 'on', 'yes')
+    test = str(getenv('TEST', True)).lower() == 'true'
     intra: IntraAPI = None
     application: Application = None
     courses: Dict[int, str] = None
