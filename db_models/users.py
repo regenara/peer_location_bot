@@ -78,7 +78,8 @@ class User(db.Model, TimeMixin):
         user = await cls.get(user_id)
         await user.update(**kwargs).apply()
         peer = await Peer.query.select_from(Peer.join(User)).where(Peer.user_id == user_id).gino.first()
-        [await Cache().delete(key=key) for key in (f'User.get_user_data:{user_id}',
-                                                   f'User.get_user_from_peer:{peer.id}',
-                                                   f'User.get_login_from_username:{user.username.lower()}')]
+        keys = [f'User.get_user_data:{user_id}', f'User.get_user_from_peer:{peer.id}']
+        if user.username:
+            keys.append(f'User.get_login_from_username:{user.username.lower()}')
+        [await Cache().delete(key=key) for key in keys]
         return user

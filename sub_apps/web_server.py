@@ -70,8 +70,9 @@ class WebServer:
                            user_from_peer: User) -> Tuple[User, str]:
         keys = [f'User.get_user_from_peer:{peer_id}', f'User.get_user_data:{new_user_id}']
         if user_from_peer:
-            keys.extend((f'User.get_user_data:{user_from_peer.id}',
-                        f'User.get_login_from_username:{user_from_peer.username.lower()}'))
+            keys.append(f'User.get_user_data:{user_from_peer.id}')
+            if user_from_peer.username:
+                keys.append(f'User.get_login_from_username:{user_from_peer.username.lower()}')
         user = await bot.get_chat(chat_id=new_user_id)
         user_from_id = await User.get(new_user_id)
         show_avatar = user_from_peer.show_avatar if user_from_peer else False
@@ -141,8 +142,8 @@ class WebServer:
             if status:
                 return web.HTTPFound('https://profile.intra.42.fr/')
             raise web.HTTPForbidden
-        self._logger.error('Failed get code and state')
-        raise web.HTTPForbidden
+        self._logger.error('Failed get code and state, redirect to bot')
+        return web.HTTPFound('https://t.me/peer_location_bot')
 
     async def donate_stream_webhook(self, request: web_request.Request):
         try:

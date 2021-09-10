@@ -1,27 +1,27 @@
 {
-   "hello": {
-      "ru": "Привет, {login}!\n\n",
-      "en": "Hello, {login}!\n\n"
+   "hello":{
+      "ru":"Привет, {login}!\n\n",
+      "en":"Hello, {login}!\n\n"
    },
    "languages":{
-      "ru": "en",
-      "en": "ru"
+      "ru":"en",
+      "en":"ru"
    },
    "help":{
       "ru":"<code>login</code> - информация о пире\n<code>login1 login2 login3</code> - информация о пирах (не более 5)\n<code>? login</code> - список 50 последних локаций пира\n<code>! login</code> - оценки пира\n<code># workplace</code> - пир за рабочим местом (#un-a1, # ox-d4, #er-f1 и т.д.)\n<code>@username</code> - поиск пира через юзернейм Телеграма. Работает если пир зарегистрирован в боте и у него включена функция \"Отображать Телеграм\"",
       "en":"<code>login</code> - peer information\n<code>login1 login2 login3</code> - information about peers (no more than 5)\n<code>? login</code> - list of the peer's last 50 locations\n<code>! login</code> - peer evaluations\n<code># workplace</code> - peer at the workplace (#un-a1, # ox-d4, #er-f1, etc)\n<code>@username</code> - peer search via Telegram username. Works if the peer is registered in the bot and has the \"Show Telegram\" function enabled"
    },
    "not_found":{
-      "ru": "Пользователь <b>{login}</b> не найден! Проверь правильность введенных данных",
-      "en": "User <b>{login}</b> not found! Check the correctness of the input data"
+      "ru":"Пир <b>{login}</b> не найден! Проверь правильность введенных данных",
+      "en":"Peer <b>{login}</b> not found! Check the correctness of the input data"
    },
    "not_found_username":{
-      "ru": "Пользователь @{username} не зарегистрирован в боте или у него отключена функция \"Отображать Телеграм\"",
-      "en": "User @{username} is not registered in the bot or has disabled the \"Show Telegram\" function"
+      "ru":"Пользователь @{username} не зарегистрирован в боте или у него отключена функция \"Отображать Телеграм\"",
+      "en":"User @{username} is not registered in the bot or has disabled the \"Show Telegram\" function"
    },
    "back":{
-      "ru": "Назад ⤴️",
-      "en": "Back ⤴️"
+      "ru":"Назад ⤴️",
+      "en":"Back ⤴️"
    },
    "user_info":{
       "ru":{
@@ -33,7 +33,7 @@
          "days":"д",
          "hours":"ч",
          "minutes":"м",
-         "unknown_location": "Не в кампусе",
+         "unknown_location":"Не в кампусе",
          "not_on_campus":"Не в кампусе. Последняя активность {days_gone}{hours_gone}{minutes_gone}назад [<code>{last_location}</code>]",
          "just_now":"Последняя активность только что [<code>{last_location}</code>]"
       },
@@ -46,14 +46,14 @@
          "days":"d",
          "hours":"h",
          "minutes":"m",
-         "unknown_location": "Not on campus",
+         "unknown_location":"Not on campus",
          "not_on_campus":"Not on campus. Last seen {days_gone}{hours_gone}{minutes_gone}ago [<code>{last_location}</code>]",
          "just_now":"Last seen just now [<code>{last_location}</code>]"
       }
    },
-   "not_logged": {
-      "ru": "{title}Пользователь еще не заходил в систему",
-      "en": "{title}The user has not logged in yet"
+   "not_logged":{
+      "ru":"{title}Пир еще не заходил в систему",
+      "en":"{title}The peer has not logged in yet"
    },
    "free_locations":{
       "ru":{
@@ -69,17 +69,17 @@
    },
    "projects":{
       "ru":{
-         "cursus": "Выбери курс:",
+         "cursus":"Выбери курс:",
          "choose":"Выбери проект:",
-         "choose_campus": "Выбери кампус:",
-         "title":"\uD83D\uDC64 Пользователи кампуса <b>{campus_name}</b>, сдавшие проект <b>{project_name}</b> за последние {weeks} нед. (указано местное время кампуса):\n",
+         "choose_campus":"Выбери кампус:",
+         "title":"\uD83D\uDC64 Пиры кампуса <b>{campus_name}</b>, сдавшие проект <b>{project_name}</b> за последние {weeks} нед. (указано местное время кампуса):\n",
          "not_found":"Никто из кампуса <b>{campus_name}</b> не сдавал проект <b>{project_name}</b> за последние {weeks} нед."
       },
       "en":{
-         "cursus": "Choose a course:",
+         "cursus":"Choose a course:",
          "choose":"Choose a project:",
-         "choose_campus": "Choose a campus:",
-         "title":"\uD83D\uDC64 <b>{campus_name}</b> campus users who passed the project {project_name} in the last {weeks} weeks (local campus time)\n",
+         "choose_campus":"Choose a campus:",
+         "title":"\uD83D\uDC64 <b>{campus_name}</b> campus peers who passed the project {project_name} in the last {weeks} weeks (local campus time)\n",
          "not_found":"No one from <b>{campus_name}</b> campus has passed project <b>{project_name}</b> in the last {weeks} weeks."
       }
    },
@@ -97,24 +97,24 @@
       "ru":{
          "on":"Уведомления включены: {login}",
          "off":"Уведомления отключены: {login}",
-         "count":"Нельзя подключить уведомления для более 10 пользователей"
+         "count":"Нельзя подключить уведомления для более 10 пиров"
       },
       "en":{
          "on":"Notifications are enabled: {login}",
          "off":"Notifications are disabled: {login}",
-         "count":"You can't enable notifications for more than 10 users"
+         "count":"You can't enable notifications for more than 10 peers"
       }
    },
    "friends_actions":{
       "ru":{
          "add":"Добавлен в друзья: {login}",
          "remove":"Удален из друзей: {login}",
-         "count":"Нельзя добавить в друзья более 20 пользователей"
+         "count":"Нельзя добавить в друзья более 20 пиров"
       },
       "en":{
          "add":"Added as a friend: {login}",
          "remove":"Removed from friends: {login}",
-         "count":"You can't add more than 20 users as friends"
+         "count":"You can't add more than 20 peers as friends"
       }
    },
    "wait":{
@@ -130,14 +130,14 @@
          "mark":"Оценка",
          "rating":"Рейтинг",
          "final_mark":"Итоговая оценка",
-         "not_eval":"{title}Пользователь еще никого не оценивал",
+         "not_eval":"{title}Пир еще никого не оценивал",
          "not_closed":"Проект еще не закрыт"
       },
       "en":{
          "mark":"Mark",
          "rating":"Rating",
          "final_mark":"Final mark",
-         "not_eval":"{title}The user has not evaluated anyone yet",
+         "not_eval":"{title}The peer has not evaluated anyone yet",
          "not_closed":"The project is not closed yet"
       }
    },
@@ -161,58 +161,58 @@
    },
    "settings_menu":{
       "ru":{
-         "language": "\uD83C\uDDF7\uD83C\uDDFA  Язык",
-         "show_avatar": "{status}  Отображать аватар",
-         "show_telegram": "{status}  Отображать твой Телеграм",
-         "default_campus": "{status}  Кампус по умолчанию"
+         "language":"\uD83C\uDDF7\uD83C\uDDFA  Язык",
+         "show_avatar":"{status}  Отображать аватар",
+         "show_telegram":"{status}  Отображать твой Телеграм",
+         "default_campus":"{status}  Кампус по умолчанию"
       },
       "en":{
-         "language": "\uD83C\uDDEC\uD83C\uDDE7  Language",
-         "show_avatar": "{status}  Show avatar",
-         "show_telegram": "{status}  Show your Telegram",
-         "default_campus": "{status}  Use default campus"
+         "language":"\uD83C\uDDEC\uD83C\uDDE7  Language",
+         "show_avatar":"{status}  Show avatar",
+         "show_telegram":"{status}  Show your Telegram",
+         "default_campus":"{status}  Use default campus"
       }
    },
    "host":{
       "ru":{
-         "last_user":"Сейчас здесь никого. Последний пользователь:\n",
+         "last_user":"Сейчас здесь никого. Последний пир:\n",
          "not_found":"Не найдено: <b>{host}</b>! Проверь правильность введенных данных"
       },
       "en":{
-         "last_user":"There's no one here right now. Last user:\n",
+         "last_user":"There's no one here right now. Last peer:\n",
          "not_found":"Not found: <b>{host}</b>! Check the correctness of the input data"
       }
    },
-   "now": {
-      "ru": "в данный момент",
-      "en": "now"
+   "now":{
+      "ru":"в данный момент",
+      "en":"now"
    },
    "antiflood":{
       "ru":"\uD83D\uDEAB Дождись завершения предыдущего запроса!",
       "en":"\uD83D\uDEAB Wait for the previous request to complete!"
    },
-   "changed_language": {
-      "ru": "Язык изменен",
-      "en": "Language changed"
+   "changed_language":{
+      "ru":"Язык изменен",
+      "en":"Language changed"
    },
    "need_auth":{
-      "ru": "Необходима авторизация",
-      "en": "Authorization required"
+      "ru":"Необходима авторизация",
+      "en":"Authorization required"
    },
-   "auth": {
-      "ru": "Авторизация",
-      "en": "Authorization"
+   "auth":{
+      "ru":"Авторизация",
+      "en":"Authorization"
    },
-   "donate_text": {
-      "ru": {
-         "donate_link": "Пожертвовать",
-         "title": "\uD83D\uDCB8 <b>Донаты на оплату сервера</b>\n\n<b>Собрано в этом месяце:</b> <code>{sum}/800.0руб</code>\n{nicknames}",
-         "tops": "<b>Топ донатеры:</b>\n{tops}"
+   "donate_text":{
+      "ru":{
+         "donate_link":"Пожертвовать",
+         "title":"\uD83D\uDCB8 <b>Донаты на оплату сервера</b>\n\n<b>Собрано в этом месяце:</b> <code>{sum}/800.0руб</code>\n{nicknames}",
+         "tops":"<b>Топ донатеры:</b>\n{tops}"
       },
-      "en": {
-         "donate_link": "Donate",
-         "title": "\uD83D\uDCB8 <b>Donates to pay for the server</b>\n\n<b>Money was donated this month:</b> <code>{sum}/800.0rub</code>\n{nicknames}",
-         "tops": "<b>Top donaters:</b>\n{tops}"
+      "en":{
+         "donate_link":"Donate",
+         "title":"\uD83D\uDCB8 <b>Donates to pay for the server</b>\n\n<b>Money was donated this month:</b> <code>{sum}/800.0rub</code>\n{nicknames}",
+         "tops":"<b>Top donaters:</b>\n{tops}"
       }
    }
 }
