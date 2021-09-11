@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urljoin
 
 from aiogram.dispatcher.webhook import configure_app
 from aiohttp import web
@@ -34,10 +35,11 @@ async def on_startup(app):
     await Config.start()
     await Config.sub_apps.start()
     webhook = await bot.get_webhook_info()
-    if webhook.url != Config.webhook_url:
+    webhook_url = urljoin(Config.bot_base_url, Config.webhook_bot_path)
+    if webhook.url != webhook_url:
         if not webhook.url:
             await bot.delete_webhook()
-        await bot.set_webhook(Config.webhook_url)
+        await bot.set_webhook(webhook_url)
 
 
 async def on_shutdown(app):
@@ -63,6 +65,6 @@ if __name__ == '__main__':
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
     app.add_routes([web.get('/', web_server.authorization),
-                    web.post('/webhooks/donate', web_server.donate_stream_webhook)])
-    configure_app(dp, app, '/webhooks/bot')
+                    web.post(Config.webhook_donate_path, web_server.donate_stream_webhook)])
+    configure_app(dp, app, Config.webhook_bot_path)
     web.run_app(app, host='localhost', port=8081)

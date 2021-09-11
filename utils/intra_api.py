@@ -66,15 +66,15 @@ class IntraAPI:
         return access_token
 
     async def _request(self, endpoint: str, params: dict = None,
-                       access_token: str = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+                       personal_access_token: str = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         url = urljoin(self._base_url, endpoint)
         params = params or {}
-        self._apps.rotate(int(not access_token))
+        self._apps.rotate(int(not personal_access_token))
         async with self._throttler:
             attempts = 1
             while attempts != 11:
                 app = self._apps[0]
-                access_token = access_token or app['access_token']
+                access_token = personal_access_token or app['access_token']
                 params = {**params, 'access_token': access_token}
                 async with self.session.request('GET', url, params=params) as response:
 
@@ -130,13 +130,13 @@ class IntraAPI:
             'client_id': client_id,
             'client_secret': client_secret,
             'code': code,
-            'redirect_uri': self._config.redirect_uri
+            'redirect_uri': self._config.bot_base_url
         }
         return await self._request_token(params=params)
 
-    async def get_me(self, access_token: str) -> Dict[str, Any]:
+    async def get_me(self, personal_access_token: str) -> Dict[str, Any]:
         endpoint = 'me'
-        return await self._request(endpoint, access_token=access_token)
+        return await self._request(endpoint, personal_access_token=personal_access_token)
 
     @cache(ttl=120)
     async def get_peer(self, login: str) -> Dict[str, Any]:

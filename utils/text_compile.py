@@ -83,6 +83,7 @@ class TextCompile:
             return None, f'{hbold(login, ":", sep="")} {e}'
         except NotFoundIntraError:
             return None, Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
+
         courses = '\n'.join(
             [f'{hbold(c["cursus"]["name"], ":", sep="")} {round(c["level"], 2)}' for c in peer.cursus_data])
         coalition = ''
@@ -113,9 +114,11 @@ class TextCompile:
         if peer.username:
             username = f'{hbold("Telegram:")} @{peer.username}\n'
         title = f'{peer.status}{full_name} aka {hcode(peer.login)}\n'
+        dignity = f'{hitalic(peer.dignity.replace("%login", peer.login))}\n' if peer.dignity else ''
         campus = f'{hbold(Config.local.campus.get(user.language), ":", sep="")} {peer.campus}\n'
         location = f'{hbold(Config.local.location.get(user.language), ":", sep="")} {peer_location}'
         text = f'{title}' \
+               f'{dignity}' \
                f'{username}' \
                f'{pool}' \
                f'{coalition}' \

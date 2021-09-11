@@ -14,7 +14,8 @@ from db_models.campuses import Campus
 from db_models.peers import Peer
 from db_models.users import User
 from db_models.users_peers import UserPeer
-from services.keyboards import (courses_keyboard,
+from services.keyboards import (auth_keyboard,
+                                courses_keyboard,
                                 data_keyboard,
                                 donate_keyboard,
                                 menu_keyboard,
@@ -23,6 +24,17 @@ from services.keyboards import (courses_keyboard,
                                 settings_keyboard)
 from services.states import States
 from utils.text_compile import text_compile
+
+
+@dp.message_handler(is_unauthorized=True, state='*')
+async def welcome_command(message: Message):
+    await dp.current_state(user=message.from_user.id).set_state(States.AUTH)
+    language_code = message.from_user.language_code if message.from_user.language_code in ('ru', 'en') else 'en'
+    user_id = message.from_user.id
+    message = await message.answer('🗿')
+    await message.edit_text(Config.local.need_auth.get(language_code),
+                            reply_markup=auth_keyboard(message_id=message.message_id, user_id=user_id,
+                                                       language_code=language_code))
 
 
 @dp.message_handler(lambda message: message.text in ('/start', Config.local.settings.ru, Config.local.settings.en),
@@ -34,6 +46,12 @@ async def settings(message: Message, user_data: Tuple[Campus, Peer, User]):
         await message.answer(Config.local.hello.get(user.language, login=peer.login),
                              reply_markup=menu_keyboard(user.language))
     await message.answer(Config.local.help_text.get(user.language), reply_markup=settings_keyboard(user=user))
+
+
+@dp.message_handler(state='throttler')
+async def message_throttler(message: Message, user_data: Tuple[Campus, Peer, User]):
+    *_, user = user_data
+    await message.answer(Config.local.antiflood.get(user.language), reply_markup=menu_keyboard(user.language))
 
 
 @dp.message_handler(is_introvert=True, state='granted')

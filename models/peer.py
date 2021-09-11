@@ -32,6 +32,7 @@ class Peer:
     status: str = ''
     last_seen_time: str = ''
     is_staff: bool = False
+    dignity: str = ''
     username: str = ''
 
     @staticmethod
@@ -89,6 +90,12 @@ class Peer:
                     if (end_at < datetime.now(timezone.utc)) and cursus['level'] < 16:
                         status = '☠️ '
                     break
+            dignity = ''
+            if peer_data['titles']:
+                selected = [title_user['title_id'] for title_user in peer_data['titles_users']
+                            if title_user['selected']]
+                if selected:
+                    dignity = [title['name'] for title in peer_data['titles'] if title['id'] == selected[0]][0]
             coalition = username = last_seen_time = last_location = ''
             if extended:
                 status, location, last_location, last_seen_time, coalition, username = \
@@ -102,4 +109,5 @@ class Peer:
             return Peer(id=id, login=login, full_name=full_name, pool_month=pool_month, pool_year=pool_year,
                         coalition=coalition, cursus_data=cursus_data, campus=campus, campus_id=campus_id,
                         time_zone=time_zone, location=location, last_location=last_location, avatar=avatar, link=link,
-                        status=status, last_seen_time=last_seen_time, is_staff=is_staff, username=username)
+                        status=status, last_seen_time=last_seen_time, is_staff=is_staff, dignity=dignity,
+                        username=username)

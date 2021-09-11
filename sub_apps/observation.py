@@ -36,59 +36,60 @@ class Observation:
         from misc import bot
 
         for login, user_ids in observables:
-            self._logger.info('Start observation process for peer=%s', login)
             try:
-                peer = await self._intra.get_peer(login=login)
-            except (NotFoundIntraError, UnknownIntraError) as e:
-                self._logger.error('Error response=%s %s, continue next', login, e)
-                continue
-            if peer:
-                location = await Cache().get(key=f'Location:{login}')
-                current_location = peer['location'] or 'not on campus'
-                if location != current_location:
-                    self._logger.info('Update peer=%s location=%s', login, current_location)
-                    await Cache().set(key=f'Location:{login}', value=current_location)
+                self._logger.info('Start observation process for peer=%s', login)
+                try:
+                    peer = await self._intra.get_peer(login=login)
+                except (NotFoundIntraError, UnknownIntraError) as e:
+                    self._logger.error('Error response=%s %s, continue next', login, e)
+                    continue
+                if peer:
+                    location = await Cache().get(key=f'Location:{login}')
+                    current_location = peer['location'] or 'not on campus'
+                    if location != current_location:
+                        self._logger.info('Update peer=%s location=%s', login, current_location)
+                        await Cache().set(key=f'Location:{login}', value=current_location)
 
-                truths = (current_location != 'not on campus', location is not None, location != current_location)
-                if all(truths):
-                    for user_id in user_ids:
-                        self._logger.info('Trying to send notification=%s %s', login, user_id)
-                        user_data = await User.get_user_data(user_id=user_id)
-                        if user_data:
-                            *_, user = user_data
-                            if isinstance(user, dict):
-                                user = User.from_dict(data=user)
-                            try:
-                                text = self._local.in_campus.get(user.language, login=login,
-                                                                 current_location=current_location)
-                                await bot.send_message(chat_id=user_id, text=text)
-                                self._logger.info('Send notification=%s %s',
-                                                  login, user.username or user.id)
-                                await asyncio.sleep(0.1)
+                    truths = (current_location != 'not on campus', location is not None, location != current_location)
+                    if all(truths):
+                        for user_id in user_ids:
+                            self._logger.info('Trying to send notification=%s %s', login, user_id)
+                            user_data = await User.get_user_data(user_id=user_id)
+                            if user_data:
+                                *_, user = user_data
+                                if isinstance(user, dict):
+                                    user = User.from_dict(data=user)
+                                try:
+                                    text = self._local.in_campus.get(user.language, login=login,
+                                                                     current_location=current_location)
+                                    await bot.send_message(chat_id=user_id, text=text)
+                                    self._logger.info('Send notification=%s %s',
+                                                      login, user.username or user.id)
+                                    await asyncio.sleep(0.1)
 
-                            except (BotBlocked, UserDeactivated) as e:
-                                await user.delete()
-                                self._logger.error('BotBlocked or UserDeactivated user=%s %s, user deleted',
-                                                   user.username or user.id, e)
+                                except (BotBlocked, UserDeactivated) as e:
+                                    await user.delete()
+                                    self._logger.error('BotBlocked or UserDeactivated user=%s %s, user deleted',
+                                                       user.username or user.id, e)
 
-                            except ChatNotFound as e:
-                                self._logger.error('ChatNotFound user=%s %s',
-                                                   user.username or user.id, e)
-                        else:
-                            self._logger.error('User not found user=%s', user_id)
-                self._logger.info('Complete observation process for peer=%s', login)
+                                except ChatNotFound as e:
+                                    self._logger.error('ChatNotFound user=%s %s',
+                                                       user.username or user.id, e)
+                            else:
+                                self._logger.error('User not found user=%s', user_id)
+                    self._logger.info('Complete observation process for peer=%s', login)
+
+            except Exception as e:
+                self._logger.error('Unknown observation error %s, login=%s', e, login)
 
     async def observation(self):
         while True:
-            self._logger.info('Start observation')
             now = datetime.now()
             offset = 0
             observables = await self._get_observables(limit=100, offset=offset)
             while observables:
-                try:
-                    await self._observation_process(observables=observables)
-                except Exception as e:
-                    self._logger.error('Unknown observation error %s', e)
+                self._logger.info('Start observation for offset=%s', offset)
+                await self._observation_process(observables=observables)
                 offset += 100
                 observables = await self._get_observables(limit=100, offset=offset)
             self._logger.info('Complete observation')

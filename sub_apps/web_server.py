@@ -38,7 +38,7 @@ class WebServer:
     async def _data_from_webhook(self, webhook_data: Dict[str, Any]) -> Tuple[bool, int]:
         try:
             uid = webhook_data['uid']
-            nickname = webhook_data.get('nickname', f'Anonymous {webhook_data["uid"][:6]}').strip()
+            nickname = webhook_data['nickname'].strip()
             sum_ = float(webhook_data['sum'])
             message = webhook_data['message']
             await Donate.create(uid=uid, nickname=nickname, sum=sum_, message=message)
@@ -109,14 +109,14 @@ class WebServer:
             self._logger.error('Failed delete message id=%s user_id=%s', message_id, user_id)
         state = await dp.current_state(user=user_id).get_state()
         if state == States.AUTH:
-            access_token = await Config.intra.auth(client_id=Config.application.client_id,
-                                                   client_secret=Config.application.client_secret,
-                                                   code=code)
+            personal_access_token = await Config.intra.auth(client_id=Config.application.client_id,
+                                                            client_secret=Config.application.client_secret,
+                                                            code=code)
             try:
-                peer = await Config.intra.get_me(access_token=access_token)
+                peer = await Config.intra.get_me(personal_access_token=personal_access_token)
             except UnknownIntraError as e:
                 self._logger.error('Failed get me token=%s user_id=%s, %s',
-                                   access_token, user_id, e)
+                                   personal_access_token, user_id, e)
                 raise web.HTTPInternalServerError
             user_from_peer = await User.get_user_from_peer(peer_id=peer['id'])
             user, language_code = await self._create_user(new_user_id=user_id, language_code=language_code,
