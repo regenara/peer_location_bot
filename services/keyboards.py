@@ -20,7 +20,7 @@ from models.peer import Peer
 def auth_keyboard(message_id: int, user_id: int, language_code: str) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(resize_keyboard=True)
     state = Config.fernet.encrypt(f'{message_id}.{user_id}.{language_code}'.encode('utf-8'))
-    query = urlencode({'client_id': Config.application.client_id, 'redirect_uri': Config.redirect_uri,
+    query = urlencode({'client_id': Config.application.client_id, 'redirect_uri': Config.bot_base_url,
                        'response_type': 'code', 'scope': 'public', 'state': state})
     keyboard.add(InlineKeyboardButton(Config.local.auth.get(language_code),
                                       url=f'https://api.intra.42.fr/oauth/authorize?{query}'))

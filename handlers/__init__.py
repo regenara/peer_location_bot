@@ -1,5 +1,4 @@
 from . import admin_handlers
-from . import services_handlers
 from . import commands_handlers
 from . import settings_handlers
 from . import pagination_handlers

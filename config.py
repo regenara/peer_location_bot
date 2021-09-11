@@ -23,7 +23,9 @@ def read_json(path_to_file: str) -> Dict[str, str]:
 class Config:
     admin: int = int(getenv('ADMIN', '373749366'))
     api_token: str = getenv('API_TOKEN')
-    webhook_url: str = getenv('WEBHOOK_URL')
+    bot_base_url: str = getenv('BOT_BASE_URL')
+    webhook_bot_path: str = getenv('WEBHOOK_BOT_PATH')
+    webhook_donate_path: str = getenv('WEBHOOK_DONATE_PATH')
 
     fernet: Fernet = None
     salt: str = getenv('SALT', '5j3I1xNcCpo2ZfFAkVMVpk6mRMpBmXqWXU7udHUgFtY=')
@@ -33,7 +35,6 @@ class Config:
     redis_url = getenv('REDIS_URL', 'redis://localhost:6379')
     redis: RedisCache = None
 
-    redirect_uri = getenv('REDIRECT_URI', 'http://localhost:8081/')
     test = str(getenv('TEST', True)).lower() == 'true'
     intra: IntraAPI = None
     application: Application = None
