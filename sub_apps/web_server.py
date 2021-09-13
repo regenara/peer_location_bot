@@ -43,8 +43,8 @@ class WebServer:
             message = webhook_data['message']
             await Donate.create(uid=uid, nickname=nickname, sum=sum_, message=message)
             self._logger.info('Successful save donate webhook=%s', webhook_data)
-            await bot.send_message(Config.admin, f'Донат от {hbold(nickname)} на сумму {hcode(sum_)}руб\n\n'
-                                                 f'{hitalic(message) if message else ""}')
+            await bot.send_message(Config.admin, '\n\n'.join((f'Донат от {hbold(nickname)} на сумму {hcode(sum_)}руб',
+                                                              hitalic(message) if message else "")))
             return True, 200
         except KeyError as e:
             self._logger.error('Failed get data from donate webhook=%s %s', webhook_data, e)

@@ -3,6 +3,7 @@ from typing import Tuple
 
 from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import (MessageCantBeDeleted,
+                                      MessageToEditNotFound,
                                       MessageNotModified,
                                       MessageToDeleteNotFound)
 
@@ -42,7 +43,7 @@ async def action_settings(callback_query: CallbackQuery, **kwargs):
     user = await User.update_user(user_id=user_id, **kwargs)
     await callback_query.answer()
     await dp.current_state(user=user_id).set_state(States.GRANTED)
-    with suppress(MessageNotModified):
+    with suppress(MessageNotModified, MessageToEditNotFound):
         await callback_query.message.edit_reply_markup(reply_markup=settings_keyboard(user=user))
 
 
@@ -53,7 +54,7 @@ async def language_settings(callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     await dp.current_state(user=user_id).set_state(States.THROTTLER)
     user = await User.update_user(user_id=user_id, language=new_language)
-    text = Config.local.help_text.get(new_language)
+    text = Config.local.help_text.get(new_language, cursus=Config.courses[Config.cursus_id])
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await callback_query.message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)

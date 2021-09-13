@@ -2,11 +2,10 @@ from contextlib import suppress
 from typing import Tuple
 
 from aiogram.types import Message
-from aiogram.utils.exceptions import (BadRequest,
-                                      MessageCantBeDeleted,
+from aiogram.utils.exceptions import (MessageCantBeDeleted,
+                                      MessageNotModified,
                                       MessageToDeleteNotFound,
                                       MessageToEditNotFound)
-from aiogram.utils.markdown import hbold
 
 from bot import dp
 from config import Config
@@ -23,6 +22,7 @@ from services.keyboards import (auth_keyboard,
                                 peer_keyboard,
                                 settings_keyboard)
 from services.states import States
+from utils.cache import Cache
 from utils.text_compile import text_compile
 
 
@@ -45,7 +45,8 @@ async def settings(message: Message, user_data: Tuple[Campus, Peer, User]):
     if message.text == '/start':
         await message.answer(Config.local.hello.get(user.language, login=peer.login),
                              reply_markup=menu_keyboard(user.language))
-    await message.answer(Config.local.help_text.get(user.language), reply_markup=settings_keyboard(user=user))
+    await message.answer(Config.local.help_text.get(user.language, cursus=Config.courses[Config.cursus_id]),
+                         reply_markup=settings_keyboard(user=user))
 
 
 @dp.message_handler(state='throttler')
@@ -66,7 +67,7 @@ async def friend_data(message: Message, user_data: Tuple[Campus, Peer, User]):
         observables = await UserPeer.get_observables(user_id=user.id)
         peer, text = await text_compile.peer_data_compile(user=user, login=friends[0].login, is_single=True)
         keyboard = peer_keyboard(peers=[peer], friends=friends, observables=observables)
-        text = f'{hbold(Config.local.friends_list.get(user.language))}\n\n{text}'
+        text = '\n\n'.join((Config.local.friends_list.get(user.language, from_=1, to=1, friends_count=1), text))
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     await message.answer(text, reply_markup=keyboard)
 
@@ -76,26 +77,24 @@ async def friend_data(message: Message, user_data: Tuple[Campus, Peer, User]):
 async def friends_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
-    title = Config.local.friends_list.get(user.language)
     message = await message.answer(Config.local.wait.get(user.language))
     texts = ['']
     friends = await UserPeer.get_friends(user_id=user.id)
     friends_count = await UserPeer.get_friends_count(user_id=user.id)
     observables = await UserPeer.get_observables(user_id=user.id)
-    for i, friend in enumerate(friends, 1):
-        texts[0] = f'{title} ({i}/{friends_count})'
+    for i, friend in enumerate(friends[:10], 1):
+        texts[0] = Config.local.friends_list.get(user.language, from_=1, to=i, friends_count=friends_count)
         peer, text = await text_compile.peer_data_compile(user=user, login=friend.login, is_single=False)
         texts.append(text)
-        try:
+        with suppress(MessageNotModified, MessageToEditNotFound):
             await message.edit_text('\n\n'.join(texts))
-        except BadRequest:
-            texts.pop(-1)
-            break
-        except MessageToEditNotFound:
-            pass
-    texts[0] = title
     text = '\n\n'.join(texts)
-    keyboard = peer_keyboard(peers=friends, friends=friends, observables=observables)
+    await Cache().set(key=f'Friends:{user.id}:1', value=texts)
+    keyboard = peer_keyboard(peers=friends[:10], friends=friends[:10], observables=observables,
+                             payload='' if friends_count < 11 else 'many_friends')
+    if friends_count > 10:
+        keyboard = pagination_keyboard(action='friends_pagination', count=friends_count, content=1,
+                                       limit=10, stop=3, keyboard=keyboard)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
