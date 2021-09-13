@@ -27,12 +27,12 @@ class Observation:
         self._logger = logging.getLogger('Observation')
 
     @staticmethod
-    async def _get_observables(limit: int, offset: int) -> Tuple[str, List[int]]:
+    async def _get_observables(limit: int, offset: int) -> List[Tuple[str, List[int]]]:
         return await db.select([Peer.login, db.func.array_agg(UserPeer.user_id)]).select_from(
             Peer.join(UserPeer)).where(UserPeer.relationship == Relationship.observable).limit(limit).offset(
             offset).group_by(Peer.id).gino.all()
 
-    async def _observation_process(self, observables: Tuple[str, List[int]]):
+    async def _observation_process(self, observables: List[Tuple[str, List[int]]]):
         from misc import bot
 
         for login, user_ids in observables:
@@ -46,12 +46,13 @@ class Observation:
                 if peer:
                     location = await Cache().get(key=f'Location:{login}')
                     current_location = peer['location'] or 'not on campus'
-                    if location != current_location:
+                    triggers = (current_location != 'not on campus',
+                                location is not None,
+                                location != current_location)
+                    if triggers[-1]:
                         self._logger.info('Update peer=%s location=%s', login, current_location)
                         await Cache().set(key=f'Location:{login}', value=current_location)
-
-                    truths = (current_location != 'not on campus', location is not None, location != current_location)
-                    if all(truths):
+                    if all(triggers):
                         for user_id in user_ids:
                             self._logger.info('Trying to send notification=%s %s', login, user_id)
                             user_data = await User.get_user_data(user_id=user_id)

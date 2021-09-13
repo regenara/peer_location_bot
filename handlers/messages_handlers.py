@@ -6,6 +6,7 @@ from aiogram.types import (InlineKeyboardMarkup,
                            Message)
 from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageToDeleteNotFound,
+                                      MessageNotModified,
                                       MessageToEditNotFound)
 
 from bot import dp
@@ -108,7 +109,7 @@ async def peers_data(message: Message, user_data: Tuple[Campus, Peer, User]):
         if peer:
             peers.append(peer)
         texts.append(text)
-        with suppress(MessageToEditNotFound):
+        with suppress(MessageNotModified, MessageToEditNotFound):
             await message.edit_text('\n\n'.join(texts))
     for login in bad_logins:
         text = Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
