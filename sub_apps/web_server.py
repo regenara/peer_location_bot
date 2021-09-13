@@ -126,7 +126,8 @@ class WebServer:
             await dp.current_state(user=user_id).set_state(States.GRANTED)
             await bot.send_message(user_id, text=Config.local.hello.get(language_code, login=peer.login),
                                    reply_markup=menu_keyboard(language=language_code))
-            await bot.send_message(user_id, text=Config.local.help_text.get(language_code),
+            await bot.send_message(user_id,
+                                   Config.local.help_text.get(language_code, cursus=Config.courses[Config.cursus_id]),
                                    reply_markup=settings_keyboard(user=user))
             self._logger.info('Successful user authorization, user_id=%s login=%s',
                               user_id, peer.login)
