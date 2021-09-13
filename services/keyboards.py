@@ -137,7 +137,7 @@ def data_keyboard(data: Union[List[Project], List[Campus]], action: str, content
 def keyboard_normalize(friends: List[PeerDB], observables: List[PeerDB],
                        buttons: List[List[InlineKeyboardButton]], payload: str) -> InlineKeyboardMarkup:
     if payload:
-        peers_data = [button.callback_data.split('.')[1:3] for row in buttons for button in row][:2:2]
+        peers_data = [button.callback_data.split('.')[1:3] for row in buttons for button in row][:-2:2]
     else:
         peers_data = [button.callback_data.split('.')[1:3] for row in buttons for button in row][::2]
     peers = []
@@ -145,7 +145,6 @@ def keyboard_normalize(friends: List[PeerDB], observables: List[PeerDB],
         peers.append(Peer(id=int(peer[0]), login=peer[1]))
     keyboard = peer_keyboard(peers=peers, friends=friends, observables=observables, payload=payload)
     if payload:
-        host, page = buttons[-1][-1].callback_data.split('.')[1:]
-        keyboard = pagination_keyboard(action='host_pagination', count=1, content=host, limit=0,
-                                       stop=3, page=int(page) - 1, keyboard=keyboard)
+        pagination_buttons = buttons[-1:][0]
+        keyboard.row(*pagination_buttons)
     return keyboard

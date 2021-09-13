@@ -20,6 +20,7 @@ from db_models.users import User
 from models.feedback import Feedback
 from models.host import Host
 from models.peer import Peer
+from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
                              NotFoundIntraError)
 from utils.savers import Savers
@@ -336,33 +337,38 @@ class TextCompile:
         text = Config.local.donate_text_title.get(user.language, sum=round(sum(sums), 2),
                                                   nicknames='\n'.join(nicknames))
         if top_nicknames:
-            text = text + '\n\n' + Config.local.donate_text_tops.get(user.language, tops=top_nicknames)
+            text = '\n\n'.join((text, Config.local.donate_text_tops.get(user.language, tops=top_nicknames)))
         return text
 
-    @staticmethod
-    def friends_list_normalization(user: User, message_text: str, friends: List[PeerDB]) -> str:
-        friends_data = message_text.split('\n\n')
-        friend_logins = [friend.login for friend in friends]
-        friends_list = [s for s in friends_data[1:] if any(x in s for x in friend_logins)]
-        new_friends_list = []
-        for data in friends_list:
-            strings = []
-            lines = data.splitlines()
-            if len(lines) > 1:
-                for i, string in enumerate(lines):
-                    if not i:
-                        strings.append(f'{hbold(string[:string.index("aka")])}'
-                                       f'aka {hcode(string[string.index("aka") + 4:])}')
-                    else:
-                        strings.append(f'{hbold(string[:string.index(":") + 1])}{string[string.index(":") + 1:]}')
-            else:
-                string = lines[0]
-                strings.append(f'{hbold(string[:string.index(":") + 1])}{string[string.index(":") + 1:]}')
-            new_friends_list.append('\n'.join(strings))
-        if new_friends_list:
-            new_friends_list.insert(0, hbold(friends_data[0]))
-            return '\n\n'.join(new_friends_list)
-        return Config.local.no_friends.get(user.language)
+    async def friends_list_normalization(self, user: User, current_page: int, removable: str,
+                                         friends: List[PeerDB], friends_count: int) -> Tuple[str, int]:
+        page = current_page
+        page_data = await Cache().get(key=f'Friends:{user.id}:{page}') or []
+        texts = [text for text in page_data if removable not in text.split('\n')[0]]
+        texts_count = len(texts)
+        if (texts_count in (0, 1) and not (page - 1)) or (not friends_count):
+            await Cache().set(key=f'Friends:{user.id}:{page}', value=[])
+            return Config.local.no_friends.get(user.language), 0
+        if texts_count == 1 and page:
+            page -= 1
+            texts = await Cache().get(key=f'Friends:{user.id}:{page}')
+        if friends_count >= 10:
+            login = None
+            text = '\n'.join(texts)
+            for peer in friends[(page - 1) * 10:]:
+                if peer.login not in text:
+                    login = peer.login
+                    break
+            if login:
+                _, text = await self.peer_data_compile(user=user, login=login, is_single=False)
+                texts.append(text)
+        from_ = (page - 1) * 10 + 1
+        to = (page - 1) * 10 + texts_count - 1
+        if to < friends_count:
+            to = friends_count
+        texts[0] = Config.local.friends_list.get(user.language, from_=from_, to=to, friends_count=friends_count)
+        await Cache().set(key=f'Friends:{user.id}:{page}', value=texts)
+        return '\n\n'.join(texts), page
 
 
 text_compile = TextCompile()

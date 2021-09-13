@@ -60,7 +60,9 @@ class IsRemoveFriend(BoundFilter):
     async def check(self, callback_query: CallbackQuery) -> bool:
         message_text = callback_query.message.text or ''
         remove = callback_query.data.split('.')[0] == 'remove'
-        return message_text.split('\n')[0] in (Config.local.friends_list.ru, Config.local.friends_list.en) and remove
+        title = message_text.split('\n')[0]
+        return any(title[:title.rindex(' ')] in s for s in
+                   (Config.local.friends_list.ru, Config.local.friends_list.en)) and remove
 
 
 class IsBackToCourses(BoundFilter):
