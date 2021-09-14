@@ -1,5 +1,6 @@
 from typing import (Any,
-                    Dict)
+                    Dict,
+                    List)
 
 from utils.cache import cache
 from . import db
@@ -16,7 +17,7 @@ class Application(db.Model):
     def __repr__(self):
         return f'{self.__class__.__name__}({self.to_dict()})'
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'client_id': self.client_id,
@@ -33,13 +34,13 @@ class Application(db.Model):
 
     @classmethod
     @cache(serialization=True, deserialization=True)
-    async def get_all(cls):
+    async def get_all(cls) -> List['Application']:
         return await cls.query.where((cls.is_main.is_(True) | cls.is_main.is_(None))).gino.all()
 
     @classmethod
-    async def get_main(cls):
+    async def get_main(cls) -> 'Application':
         return await cls.query.where(cls.is_main.is_(True)).gino.first()
 
     @classmethod
-    async def get_test(cls):
+    async def get_test(cls) -> 'Application':
         return await cls.query.where(cls.is_main.is_(False)).gino.first()

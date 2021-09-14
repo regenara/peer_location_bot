@@ -42,14 +42,14 @@ class WebServer:
             sum_ = float(webhook_data['sum'])
             message = webhook_data['message']
             await Donate.create(uid=uid, nickname=nickname, sum=sum_, message=message)
-            self._logger.info('Successful save donate webhook=%s', webhook_data)
+            self._logger.info('Successful save donate | %s', webhook_data)
             await bot.send_message(Config.admin, '\n\n'.join((f'Донат от {hbold(nickname)} на сумму {hcode(sum_)}руб',
                                                               hitalic(message) if message else "")))
             return True, 200
         except KeyError as e:
-            self._logger.error('Failed get data from donate webhook=%s %s', webhook_data, e)
+            self._logger.error('Failed get data from donate | %s | %s', webhook_data, e)
         except UniqueViolationError as e:
-            self._logger.error('Failed save donate data webhook=%s %s', webhook_data, e)
+            self._logger.error('Failed save donate data | %s | %s', webhook_data, e)
         return False, 400
 
     @staticmethod
@@ -64,7 +64,7 @@ class WebServer:
                 await UserPeer.update.values(
                     user_id=new_user_id).where(UserPeer.user_id == user_from_peer.id).gino.status()
             await Cache().delete(key=f'UserPeer._get_relationships:{user_from_peer.id}')
-            self._logger.info('Successful transfer relationships user_id=%s', new_user_id)
+            self._logger.info('Successful transfer relationships | %s', new_user_id)
 
     async def _create_user(self, new_user_id: int, language_code: str, peer_id: int,
                            user_from_peer: User) -> Tuple[User, str]:
@@ -83,12 +83,12 @@ class WebServer:
             new_user = await User.create_user(user_id=new_user_id, username=user.username, language=language_code,
                                               show_avatar=show_avatar, show_me=show_me,
                                               use_default_campus=use_default_campus)
-            self._logger.info('Successful create user=%s ', user.username or new_user_id)
+            self._logger.info('Successful create | %s ', user.username or new_user_id)
         else:
             await user_from_id.update(username=user.username, show_avatar=show_avatar, show_me=show_me,
                                       language=language_code, use_default_campus=use_default_campus).apply()
             new_user = await User.get(new_user_id)
-            self._logger.info('Successful update user user_id=%s', new_user_id)
+            self._logger.info('Successful update user | %s', user.username or new_user_id)
         [await Cache().delete(key=key) for key in keys]
         return new_user, language_code
 
@@ -97,16 +97,16 @@ class WebServer:
         try:
             message_id, user_id, language_code = signature.split('.')
             message_id, user_id = map(int, (message_id, user_id))
-            self._logger.info('Successful parse signature message_id=%s user_id=%s language_code=%s',
+            self._logger.info('Successful parse signature | message_id %s | user_id %s | language_code %s',
                               message_id, user_id, language_code)
         except ValueError:
             self._logger.error('Failed parse signature=%s', signature)
             raise web.HTTPForbidden
         try:
             await bot.delete_message(chat_id=user_id, message_id=message_id)
-            self._logger.info('Successful delete message id=%s user_id=%s', message_id, user_id)
-        except (MessageToDeleteNotFound, MessageCantBeDeleted):
-            self._logger.error('Failed delete message id=%s user_id=%s', message_id, user_id)
+            self._logger.info('Successful delete message | message_id %s | user_id %s', message_id, user_id)
+        except (MessageToDeleteNotFound, MessageCantBeDeleted) as e:
+            self._logger.error('Failed delete message | message_id %s | user_id %s | %s', message_id, user_id, e)
         state = await dp.current_state(user=user_id).get_state()
         if state == States.AUTH:
             personal_access_token = await Config.intra.auth(client_id=Config.application.client_id,
@@ -115,7 +115,7 @@ class WebServer:
             try:
                 peer = await Config.intra.get_me(personal_access_token=personal_access_token)
             except UnknownIntraError as e:
-                self._logger.error('Failed get me token=%s user_id=%s, %s',
+                self._logger.error('Failed get me | token %s | user_id %s | %s',
                                    personal_access_token, user_id, e)
                 raise web.HTTPInternalServerError
             user_from_peer = await User.get_user_from_peer(peer_id=peer['id'])
@@ -129,7 +129,7 @@ class WebServer:
             await bot.send_message(user_id,
                                    Config.local.help_text.get(language_code, cursus=Config.courses[Config.cursus_id]),
                                    reply_markup=settings_keyboard(user=user))
-            self._logger.info('Successful user authorization, user_id=%s login=%s',
+            self._logger.info('Successful user authorization | user_id %s | login %s',
                               user_id, peer.login)
             return True
         self._logger.error('Incorrect state=%s', state)
@@ -138,7 +138,7 @@ class WebServer:
         if request.query.get('code') and request.query.get('state'):
             code = request.query['code']
             state = request.query['state']
-            self._logger.info('Successful get code=%s and state=%s', code, state)
+            self._logger.info('Successful get query | code %s | state %s', code, state)
             status = await self._authorization_process(code=code, state=state)
             if status:
                 return web.HTTPFound('https://profile.intra.42.fr/')
@@ -151,6 +151,6 @@ class WebServer:
             webhook_data = await request.json()
             is_success, status = await self._data_from_webhook(webhook_data=webhook_data)
         except JSONDecodeError as e:
-            self._logger.error('Failed get json from request %s', e)
+            self._logger.error('Failed get json from request | %s', e)
             is_success, status = False, 400
         return web.json_response({'success': is_success}, status=status)

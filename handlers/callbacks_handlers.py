@@ -107,6 +107,7 @@ async def campus_projects(callback_query: CallbackQuery, user_data: Tuple[Campus
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await callback_query.message.delete()
     message = await callback_query.message.answer(Config.local.wait.get(user.language))
+    await callback_query.message.bot.send_chat_action(user.id, 'typing')
     text, count, _ = await text_compile.free_locations_compile(user=user, campus_id=campus_id)
     back_button_data = (Config.local.back.get(user.language), 'back.locations')
     keyboard = pagination_keyboard(action='locations_pagination', count=count, content=campus_id,
@@ -206,6 +207,7 @@ async def projects_(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer
     content, project_id, page = callback_query.data.split('.')[1:]
     project_id = int(project_id)
     cursus_id, campus_id = map(int, content.split('='))
+    await callback_query.message.bot.send_chat_action(user.id, 'typing')
     text = await text_compile.project_peers_compile(user=user, project_id=project_id, campus_id=campus_id)
     projects = await Project.get_projects(cursus_id=cursus_id)
     back_button_data = (Config.local.back.get(user.language), 'back.courses')

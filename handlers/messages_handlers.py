@@ -26,6 +26,7 @@ async def action_peer(user: User, message: Message, method: Callable, action: st
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
     login = message.text[1:].lower().strip()
     message = await message.answer(Config.local.wait.get(user.language))
+    await message.bot.send_chat_action(user.id, 'typing')
     text, count = await method(user=user, login=login)
     keyboard = pagination_keyboard(action=action, count=count, content=login, limit=limit, stop=stop)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
@@ -66,6 +67,7 @@ async def host_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
     host = message.text[1:].lower().strip()
     message = await message.answer(Config.local.wait.get(user.language))
+    await message.bot.send_chat_action(user.id, 'typing')
     text, peer = await text_compile.host_data_compile(user=user, host=host)
     keyboard = None
     if peer:
@@ -104,6 +106,7 @@ async def peers_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     texts = []
     peers = []
     for login in peer_logins:
+        await message.bot.send_chat_action(user.id, 'typing')
         peer, text = await text_compile.peer_data_compile(user=user, login=login, is_single=False)
         if peer:
             peers.append(peer)
