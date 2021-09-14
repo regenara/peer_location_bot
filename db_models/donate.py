@@ -48,4 +48,4 @@ class Donate(db.Model, TimeMixin):
     async def get_top_donaters(cls) -> Tuple[str, Decimal]:
         sums = db.func.sum(cls.sum)
         return await db.select([cls.nickname, sums]).group_by(
-            cls.nickname).order_by(sums.desc()).limit(10).gino.load((cls.nickname, ColumnLoader(sums))).all()
+            cls.nickname).order_by(sums.desc()).limit(20).gino.load((cls.nickname, ColumnLoader(sums))).all()

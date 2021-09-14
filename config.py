@@ -23,7 +23,7 @@ def read_json(path_to_file: str) -> Dict[str, str]:
 class Config:
     admin: int = int(getenv('ADMIN', '373749366'))
     api_token: str = getenv('API_TOKEN')
-    bot_base_url: str = getenv('BOT_BASE_URL')
+    bot_base_url: str = getenv('BOT_BASE_URL', 'http://localhost:8081')
     webhook_bot_path: str = getenv('WEBHOOK_BOT_PATH')
     webhook_donate_path: str = getenv('WEBHOOK_DONATE_PATH')
 
@@ -35,7 +35,7 @@ class Config:
     redis_url = getenv('REDIS_URL', 'redis://localhost:6379')
     redis: RedisCache = None
 
-    test = str(getenv('TEST', True)).lower() == 'true'
+    test = str(getenv('TEST', False)).lower() == 'true'
     intra: IntraAPI = None
     application: Application = None
     courses: Dict[int, str] = None

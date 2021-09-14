@@ -75,11 +75,10 @@ class User(db.Model, TimeMixin):
 
     @classmethod
     async def update_user(cls, user_id: int, **kwargs) -> 'User':
-        user = await cls.get(user_id)
-        await user.update(**kwargs).apply()
-        peer = await Peer.query.select_from(Peer.join(User)).where(Peer.user_id == user_id).gino.first()
+        _, peer, user = await cls.get_user_data(user_id=user_id)
         keys = [f'User.get_user_data:{user_id}', f'User.get_user_from_peer:{peer.id}']
         if user.username:
             keys.append(f'User.get_login_from_username:{user.username.lower()}')
+        await user.update(**kwargs).apply()
         [await Cache().delete(key=key) for key in keys]
         return user

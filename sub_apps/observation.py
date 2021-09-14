@@ -32,9 +32,45 @@ class Observation:
             Peer.join(UserPeer)).where(UserPeer.relationship == Relationship.observable).limit(limit).offset(
             offset).group_by(Peer.id).gino.all()
 
-    async def _observation_process(self, observables: List[Tuple[str, List[int]]]):
+    async def _mailing(self, user_ids: List[int], login: str, current_location: str):
         from misc import bot
 
+        for user_id in user_ids:
+            self._logger.info('Trying to send notification=%s %s', login, user_id)
+            user_data = await User.get_user_data(user_id=user_id)
+            if user_data:
+                _, peer, user = user_data
+                if isinstance(user, dict):
+                    user = User.from_dict(data=user)
+                try:
+                    text = self._local.in_campus.get(user.language, login=login,
+                                                     current_location=current_location)
+                    await bot.send_message(chat_id=user_id, text=text)
+                    self._logger.info('Send notification=%s %s',
+                                      login, user.username or user.id)
+                    await asyncio.sleep(0.1)
+
+                except (BotBlocked, UserDeactivated) as e:
+                    self._logger.error('BotBlocked or UserDeactivated user=%s %s, user deleted',
+                                       user.username or user.id, e)
+                    keys = [
+                        f'Peer.get_peer:{peer.id}',
+                        f'UserPeer._get_relationships:{user_id}',
+                        f'User.get_user_data:{user_id}',
+                        f'User.get_user_from_peer:{peer.id}'
+                    ]
+                    if user.username:
+                        keys.append(f'User.get_login_from_username:{user.username.lower()}')
+                    await user.delete()
+                    [await Cache().delete(key=key) for key in keys]
+
+                except ChatNotFound as e:
+                    self._logger.error('ChatNotFound user=%s %s',
+                                       user.username or user.id, e)
+            else:
+                self._logger.error('User not found user=%s', user_id)
+
+    async def _observation_process(self, observables: List[Tuple[str, List[int]]]):
         for login, user_ids in observables:
             try:
                 self._logger.info('Start observation process for peer=%s', login)
@@ -53,31 +89,7 @@ class Observation:
                         self._logger.info('Update peer=%s location=%s', login, current_location)
                         await Cache().set(key=f'Location:{login}', value=current_location)
                     if all(triggers):
-                        for user_id in user_ids:
-                            self._logger.info('Trying to send notification=%s %s', login, user_id)
-                            user_data = await User.get_user_data(user_id=user_id)
-                            if user_data:
-                                *_, user = user_data
-                                if isinstance(user, dict):
-                                    user = User.from_dict(data=user)
-                                try:
-                                    text = self._local.in_campus.get(user.language, login=login,
-                                                                     current_location=current_location)
-                                    await bot.send_message(chat_id=user_id, text=text)
-                                    self._logger.info('Send notification=%s %s',
-                                                      login, user.username or user.id)
-                                    await asyncio.sleep(0.1)
-
-                                except (BotBlocked, UserDeactivated) as e:
-                                    await user.delete()
-                                    self._logger.error('BotBlocked or UserDeactivated user=%s %s, user deleted',
-                                                       user.username or user.id, e)
-
-                                except ChatNotFound as e:
-                                    self._logger.error('ChatNotFound user=%s %s',
-                                                       user.username or user.id, e)
-                            else:
-                                self._logger.error('User not found user=%s', user_id)
+                        await self._mailing(user_ids=user_ids, login=login, current_location=current_location)
                     self._logger.info('Complete observation process for peer=%s', login)
 
             except Exception as e:
