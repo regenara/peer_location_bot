@@ -4,10 +4,6 @@ import logging
 from typing import (List,
                     Tuple)
 
-from aiogram.utils.exceptions import (BotBlocked,
-                                      ChatNotFound,
-                                      UserDeactivated)
-
 from db_models import db
 from db_models.peers import Peer
 from db_models.users import User
@@ -33,51 +29,31 @@ class Observation:
             offset).group_by(Peer.id).gino.all()
 
     async def _mailing(self, user_ids: List[int], login: str, current_location: str):
-        from misc import bot
+        from utils.helpers import AdminProcesses
 
+        mailing = AdminProcesses(logger=self._logger).mailing
         for user_id in user_ids:
-            self._logger.info('Trying to send notification=%s %s', login, user_id)
+            self._logger.info('Trying to send notification | %s | %s', login, user_id)
             user_data = await User.get_user_data(user_id=user_id)
             if user_data:
                 _, peer, user = user_data
                 if isinstance(user, dict):
                     user = User.from_dict(data=user)
-                try:
-                    text = self._local.in_campus.get(user.language, login=login,
-                                                     current_location=current_location)
-                    await bot.send_message(chat_id=user_id, text=text)
-                    self._logger.info('Send notification=%s %s',
-                                      login, user.username or user.id)
-                    await asyncio.sleep(0.1)
-
-                except (BotBlocked, UserDeactivated) as e:
-                    self._logger.error('BotBlocked or UserDeactivated user=%s %s, user deleted',
-                                       user.username or user.id, e)
-                    keys = [
-                        f'Peer.get_peer:{peer.id}',
-                        f'UserPeer._get_relationships:{user_id}',
-                        f'User.get_user_data:{user_id}',
-                        f'User.get_user_from_peer:{peer.id}'
-                    ]
-                    if user.username:
-                        keys.append(f'User.get_login_from_username:{user.username.lower()}')
-                    await user.delete()
-                    [await Cache().delete(key=key) for key in keys]
-
-                except ChatNotFound as e:
-                    self._logger.error('ChatNotFound user=%s %s',
-                                       user.username or user.id, e)
+                    peer = Peer.from_dict(data=peer)
+                text = self._local.in_campus.get(user.language, login=login,
+                                                 current_location=current_location)
+                await mailing(message=text, user=user, peer_id=peer.id)
             else:
-                self._logger.error('User not found user=%s', user_id)
+                self._logger.error('User not found | %s', user_id)
 
     async def _observation_process(self, observables: List[Tuple[str, List[int]]]):
         for login, user_ids in observables:
             try:
-                self._logger.info('Start observation process for peer=%s', login)
+                self._logger.info('Start observation process | %s', login)
                 try:
                     peer = await self._intra.get_peer(login=login)
                 except (NotFoundIntraError, UnknownIntraError) as e:
-                    self._logger.error('Error response=%s %s, continue next', login, e)
+                    self._logger.error('Error response | %s | %s | continue next', login, e)
                     continue
                 if peer:
                     location = await Cache().get(key=f'Location:{login}')
@@ -86,14 +62,14 @@ class Observation:
                                 location is not None,
                                 location != current_location)
                     if triggers[-1]:
-                        self._logger.info('Update peer=%s location=%s', login, current_location)
+                        self._logger.info('Update location | %s | %s → %s', login, location, current_location)
                         await Cache().set(key=f'Location:{login}', value=current_location)
                     if all(triggers):
                         await self._mailing(user_ids=user_ids, login=login, current_location=current_location)
-                    self._logger.info('Complete observation process for peer=%s', login)
+                    self._logger.info('Complete observation process | %s', login)
 
             except Exception as e:
-                self._logger.error('Unknown observation error %s, login=%s', e, login)
+                self._logger.error('Unknown observation error | %s | %s', login, e)
 
     async def observation(self):
         while True:
@@ -105,7 +81,7 @@ class Observation:
                 await self._observation_process(observables=observables)
                 offset += 100
                 observables = await self._get_observables(limit=100, offset=offset)
-            self._logger.info('Complete observation')
+            self._logger.info('Completed observation')
             passed_seconds = (datetime.now() - now).seconds
             if passed_seconds < 600:
                 sleep = 600 - passed_seconds

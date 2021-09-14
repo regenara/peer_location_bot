@@ -68,14 +68,14 @@ class TextCompile:
         return self._get_peer_title(status=status, url=url, full_name=full_name, login=login)
 
     @staticmethod
-    def is_wrong_name(name: str) -> str:
+    def _is_wrong_name(name: str) -> str:
         if len(name) > 20:
             return f'{name[:20]}...'
         if len(name) < 2 or any(char in './\\#% \n?!' for char in name):
             return name
 
     async def peer_data_compile(self, user: User, login: str, is_single: bool) -> Tuple[Union[Peer, None], str]:
-        is_wrong = self.is_wrong_name(name=login)
+        is_wrong = self._is_wrong_name(name=login)
         if is_wrong:
             return None, Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt"))
         try:
@@ -86,7 +86,8 @@ class TextCompile:
             return None, Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
 
         courses = '\n'.join(
-            [f'{hbold(c["cursus"]["name"], ":", sep="")} {round(c["level"], 2)}' for c in peer.cursus_data])
+            [f'{hbold(c["cursus"]["name"], ":", sep="")} {round(c["level"], 2)}' for c in peer.cursus_data]
+        )
         coalition = ''
         if peer.coalition:
             coalition = f'{hbold(Config.local.coalition.get(user.language), ":", sep="")} {peer.coalition}\n'
@@ -156,7 +157,7 @@ class TextCompile:
 
     async def peer_locations_compile(self, user: User, login: str, page: int = 0,
                                      message_text: str = None) -> Tuple[str, int]:
-        is_wrong = self.is_wrong_name(name=login)
+        is_wrong = self._is_wrong_name(name=login)
         if is_wrong:
             return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0
         try:
@@ -185,7 +186,7 @@ class TextCompile:
         return title + '\n'.join(texts), count
 
     async def host_data_compile(self, user: User, host: str, page: int = 0) -> Tuple[str, Union[Peer, None]]:
-        is_wrong = self.is_wrong_name(name=host)
+        is_wrong = self._is_wrong_name(name=host)
         if is_wrong:
             return Config.local.host_not_found.get(user.language, host=is_wrong.replace("<", "&lt")), None
         try:
@@ -231,7 +232,7 @@ class TextCompile:
 
     async def peer_feedbacks_compile(self, user: User, login: str, page: int = 0,
                                      message_text: str = None) -> Tuple[str, int]:
-        is_wrong = self.is_wrong_name(name=login)
+        is_wrong = self._is_wrong_name(name=login)
         if is_wrong:
             return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0
         user.show_avatar = False
@@ -369,6 +370,30 @@ class TextCompile:
         texts[0] = Config.local.friends_list.get(user.language, from_=from_, to=to, friends_count=friends_count)
         await Cache().set(key=f'Friends:{user.id}:{page}', value=texts)
         return '\n\n'.join(texts), page
+
+    async def logins_separation(self, message_text: str) -> Tuple[List[str], List[str]]:
+        logins = message_text.lower().replace('@', '').split()[:5]
+        bad_logins = []
+        logins.sort()
+        logins_copy = logins.copy()
+        for login in logins_copy:
+            is_wrong = self._is_wrong_name(name=login)
+            if is_wrong:
+                logins.remove(login)
+                bad_logins.append(is_wrong)
+        bad_logins = list(dict.fromkeys(bad_logins))
+        if len(logins) < 2:
+            return logins, bad_logins
+        try:
+            peers = await Config.intra.get_peers(logins=logins)
+        except UnknownIntraError:
+            return logins, bad_logins
+        peer_logins = [peer['login'] for peer in peers]
+        for login in logins:
+            if login not in peer_logins:
+                bad_logins.append(login)
+        peer_logins.sort()
+        return peer_logins, bad_logins
 
 
 text_compile = TextCompile()

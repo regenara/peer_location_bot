@@ -76,6 +76,9 @@ class User(db.Model, TimeMixin):
     @classmethod
     async def update_user(cls, user_id: int, **kwargs) -> 'User':
         _, peer, user = await cls.get_user_data(user_id=user_id)
+        if isinstance(user, dict):
+            user = cls.from_dict(data=user)
+            peer = Peer.from_dict(data=peer)
         keys = [f'User.get_user_data:{user_id}', f'User.get_user_from_peer:{peer.id}']
         if user.username:
             keys.append(f'User.get_login_from_username:{user.username.lower()}')
