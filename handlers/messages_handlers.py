@@ -18,7 +18,6 @@ from db_models.users_peers import UserPeer
 from services.keyboards import (pagination_keyboard,
                                 peer_keyboard)
 from services.states import States
-from utils.helpers import logins_separation
 from utils.text_compile import text_compile
 
 
@@ -100,7 +99,7 @@ async def peer_data(message: Message, user_data: Tuple[Campus, Peer, User]):
 async def peers_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
-    peer_logins, bad_logins = await logins_separation(message_text=message.text)
+    peer_logins, bad_logins = await text_compile.logins_separation(message_text=message.text)
     message = await message.answer(Config.local.wait.get(user.language))
     texts = []
     peers = []

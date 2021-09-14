@@ -35,7 +35,7 @@ class Config:
     redis_url = getenv('REDIS_URL', 'redis://localhost:6379')
     redis: RedisCache = None
 
-    test = str(getenv('TEST', False)).lower() == 'true'
+    test = str(getenv('TEST', True)).lower() == 'true'
     intra: IntraAPI = None
     application: Application = None
     courses: Dict[int, str] = None
