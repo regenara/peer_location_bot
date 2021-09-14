@@ -81,38 +81,38 @@ class IntraAPI:
                     if response.status == 200:
                         try:
                             json_response = await response.json()
-                            self._logger.info('Response with token=%s url=%s', access_token, url)
+                            self._logger.info('Request=%s %s [%s] | %s | %s | completed',
+                                              attempts, response.reason, response.status, url, access_token)
                             return json_response
                         except ContentTypeError as e:
-                            self._logger.error('Response url=%s: ContentTypeError %s, continue', url, e)
+                            self._logger.error('Request=%s %s [%s] | %s | %s | ContentTypeError %s | continue',
+                                               attempts, response.reason, response.status, url, access_token, e)
                             continue
 
                     if response.status == 429 and endpoint == 'me':
-                        self._logger.error('Response %s with token=%s url=%s: %s [%s], continue',
-                                           attempts, access_token, url, response.reason, response.status)
+                        self._logger.error('Request=%s %s [%s] | %s | %s | continue',
+                                           attempts, response.reason, response.status, url, access_token)
                         continue
 
-                    if response.status == 401:
-                        json_response = await response.json()
-                        if json_response.get('message') == 'The access token expired':
-                            self._logger.error('Response %s with token=%s, token expired, refresh',
-                                               attempts, access_token)
-                            self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
-                                                                                  client_id=app['client_id'],
-                                                                                  client_secret=app['client_secret'])
+                    if response.status == 401 and (await response.json()).get('message') == 'The access token expired':
+                        self._logger.error('Request=%s %s [%s] | %s | %s | token expired | refresh',
+                                           attempts, response.reason, response.status, url, access_token)
+                        self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
+                                                                              client_id=app['client_id'],
+                                                                              client_secret=app['client_secret'])
 
                     if response.status == 404:
-                        self._logger.error('Response url=%s: %s [%s], raise NotFoundIntraError',
-                                           url, response.reason, response.status)
+                        self._logger.error('Request=%s %s [%s] | %s | %s | raise NotFoundIntraError',
+                                           attempts, response.reason, response.status, url, access_token)
                         raise NotFoundIntraError(f'Intra response: {response.reason} [{response.status}]')
 
-                    self._logger.error('Response %s token=%s url=%s: %s [%s]',
-                                       attempts, access_token, url, response.reason, response.status)
+                    self._logger.error('Request=%s %s [%s] | %s | %s | continue',
+                                       attempts, response.reason, response.status, url, access_token)
                     attempts += 1
                     self._apps.rotate(1)
 
-        self._logger.error('UnknownIntraError response %s url=%s: %s [%s]',
-                           attempts - 1, url, response.reason, response.status)
+        self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
+                           attempts - 1, response.reason, response.status, url, access_token)
         raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
 
     async def load(self):
