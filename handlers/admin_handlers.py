@@ -7,11 +7,14 @@ from aiogram.utils.exceptions import (BotBlocked,
 
 from bot import dp
 from config import Config
+from db_models import db
+from db_models.peers import Peer
 from db_models.projects import Project
 from db_models.users import User
 from misc import bot
 from services.keyboards import menu_keyboard
 from services.states import States
+from utils.cache import Cache
 from utils.helpers import projects_parser
 
 
@@ -23,18 +26,30 @@ async def mailing(message: Message):
     else:
         await message.answer('Рассылка началась')
         offset = 0
-        users = await User.query.limit(100).offset(offset).gino.all()
-        while users:
-            for user in users:
+        query = db.select([User, Peer]).select_from(User.outerjoin(Peer)).limit(100).offset(offset).order_by(User.id)
+        result = await query.gino.load((User, Peer.id)).all()
+        while result:
+            for user, peer_id in result:
                 try:
-                    await message.copy_to(user.id, reply_markup=menu_keyboard(user.language))
+                    await message.copy_to(chat_id=user.id, reply_markup=menu_keyboard(user.language))
                     await asyncio.sleep(0.1)
                 except (BotBlocked, UserDeactivated):
+                    keys = [
+                        f'Peer.get_peer:{peer_id}',
+                        f'UserPeer._get_relationships:{user.id}',
+                        f'User.get_user_data:{user.id}',
+                        f'User.get_user_from_peer:{peer_id}'
+                    ]
+                    if user.username:
+                        keys.append(f'User.get_login_from_username:{user.username.lower()}')
                     await user.delete()
+                    [await Cache().delete(key=key) for key in keys]
                 except ChatNotFound:
                     pass
             offset += 100
-            users = await User.query.limit(100).offset(offset).gino.all()
+            query = db.select([User, Peer]).select_from(
+                User.outerjoin(Peer)).limit(100).offset(offset).order_by(User.id)
+            result = await query.gino.load((User, Peer.id)).all()
         await message.answer('Готово!')
 
 
