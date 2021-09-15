@@ -146,6 +146,7 @@ async def friends_pagination(callback_query: CallbackQuery, user_data: Tuple[Cam
     friends_count = await UserPeer.get_friends_count(user_id=user.id)
     observables = await UserPeer.get_observables(user_id=user.id)
     for i, friend in enumerate(friends, page * 10 + 1):
+        await callback_query.message.bot.send_chat_action(user.id, 'typing')
         texts[0] = Config.local.friends_list.get(user.language, from_=page * 10 + 1, to=i, friends_count=friends_count)
         peer, text = await text_compile.peer_data_compile(user=user, login=friend.login, is_single=False)
         texts.append(text)

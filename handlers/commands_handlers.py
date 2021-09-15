@@ -83,6 +83,7 @@ async def friends_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     friends_count = await UserPeer.get_friends_count(user_id=user.id)
     observables = await UserPeer.get_observables(user_id=user.id)
     for i, friend in enumerate(friends[:10], 1):
+        await message.bot.send_chat_action(user.id, 'typing')
         texts[0] = Config.local.friends_list.get(user.language, from_=1, to=i, friends_count=friends_count)
         peer, text = await text_compile.peer_data_compile(user=user, login=friend.login, is_single=False)
         texts.append(text)
@@ -115,6 +116,7 @@ async def free_locations(message: Message, user_data: Tuple[Campus, Peer, User])
     _, peer, user = user_data
     if user.use_default_campus:
         message = await message.answer(Config.local.wait.get(user.language))
+        await message.bot.send_chat_action(user.id, 'typing')
         text, count, _ = await text_compile.free_locations_compile(user=user, campus_id=peer.campus_id)
         keyboard = pagination_keyboard(action='locations_pagination', count=count,
                                        content=peer.campus_id, limit=40, stop=9)

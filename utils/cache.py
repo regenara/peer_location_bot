@@ -30,6 +30,13 @@ class Cache:
             return [cls.from_dict(obj) for obj in value]
         return cls.from_dict(value)
 
+    @staticmethod
+    def deserialization_user_data(values: List[Dict[str, Any]]) -> List[Any]:
+        from db_models.campuses import Campus
+        from db_models.peers import Peer
+        from db_models.users import User
+        return [cls.from_dict(value) for cls, value in zip((Campus, Peer, User), values)]
+
     async def set(self, key: str, value: Any, ttl: int = None):
         await self._redis.set(key=key, value=value, ttl=ttl)
 
@@ -54,7 +61,7 @@ def del_cache(keys: List[str], without_sub_key: List[int] = None):
     return decorator
 
 
-def cache(ttl: int = None, serialization: bool = False, deserialization: bool = False):
+def cache(ttl: int = None, serialization: bool = False, deserialization: bool = False, is_user_data: bool = False):
     def decorator(func: Callable) -> Callable:
         async def wrapper(*args, **kwargs) -> Any:
             cls = args[0]
@@ -69,6 +76,8 @@ def cache(ttl: int = None, serialization: bool = False, deserialization: bool = 
                 return value
             if deserialization:
                 return Cache.deserialization(cls=cls, value=value)
+            if is_user_data:
+                return Cache.deserialization_user_data(values=value)
             return value
         return wrapper
     return decorator

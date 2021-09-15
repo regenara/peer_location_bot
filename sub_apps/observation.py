@@ -37,9 +37,6 @@ class Observation:
             user_data = await User.get_user_data(user_id=user_id)
             if user_data:
                 _, peer, user = user_data
-                if isinstance(user, dict):
-                    user = User.from_dict(data=user)
-                    peer = Peer.from_dict(data=peer)
                 text = self._local.in_campus.get(user.language, login=login,
                                                  current_location=current_location)
                 await mailing(message=text, user=user, peer_id=peer.id)

@@ -74,12 +74,12 @@ class AdminProcesses:
                 await message.copy_to(chat_id=user.id, reply_markup=menu_keyboard(user.language))
             else:
                 await bot.send_message(chat_id=user.id, text=message)
-            self._logger.info('Successful message sending | %s | completed', user.username or user.id)
+            self._logger.info('Successful message sending | %s [%s] | completed', user.id, user.username)
             await asyncio.sleep(0.1)
 
         except (BotBlocked, UserDeactivated) as e:
-            self._logger.error('Failed message sending | %s | %s | user deleted',
-                               user.username or user.id, e)
+            self._logger.error('Failed message sending | %s [%s] | %s | user deleted',
+                               user.id, user.username, e)
             keys = [
                 f'Peer.get_peer:{peer_id}',
                 f'UserPeer._get_relationships:{user.id}',
@@ -92,8 +92,8 @@ class AdminProcesses:
             [await Cache().delete(key=key) for key in keys]
 
         except ChatNotFound as e:
-            self._logger.error('Failed message sending | %s | %s | pass',
-                               user.username or user.id, e)
+            self._logger.error('Failed message sending | %s [%s] | %s | pass',
+                               user.id, user.username, e)
 
     async def sending_messages(self, message: Message):
         offset = 0

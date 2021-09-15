@@ -31,7 +31,7 @@ class Updater:
                                                time_zone=campus['time_zone'])
                     self._logger.info('Save campus %s in db', campus['name'])
                 except (NotFoundIntraError, UnknownIntraError) as e:
-                    self._logger.error('Get campus=%s error %s', campus_id, e)
+                    self._logger.error('Get campus error | %s | %s', campus_id, e)
 
     async def updater(self):
         while True:
