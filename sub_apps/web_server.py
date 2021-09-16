@@ -71,8 +71,6 @@ class WebServer:
         keys = [f'User.get_user_from_peer:{peer_id}', f'User.get_user_data:{new_user_id}']
         if user_from_peer:
             keys.append(f'User.get_user_data:{user_from_peer.id}')
-            if user_from_peer.username:
-                keys.append(f'User.get_login_from_username:{user_from_peer.username.lower()}')
         user = await bot.get_chat(chat_id=new_user_id)
         user_from_id = await User.get(new_user_id)
         show_avatar = user_from_peer.show_avatar if user_from_peer else False

@@ -3,16 +3,24 @@ from db_models.campuses import Campus
 from db_models.coalitions import Coalition
 from db_models.peers import Peer
 from db_models.projects import Project
+from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
                              NotFoundIntraError)
 
 
 class Savers:
     @staticmethod
-    async def get_peer(peer_id: int, login: str, campus_id: int = None, user_id: int = None) -> Peer:
+    async def get_peer(peer_id: int, login: str, campus_id: int, user_id: int = None) -> Peer:
         peer = await Peer.get_peer(peer_id=peer_id)
+        updates = {}
         if peer and user_id:
-            await peer.update(user_id=user_id).apply()
+            updates.update({'user_id': user_id})
+        if peer and peer.campus_id != campus_id:
+            updates.update({'campus_id': campus_id})
+        if updates:
+            peer = await Peer.update_peer(peer_id=peer_id, **updates)
+            keys = [f'User.get_user_from_peer:{peer_id}', f'User.get_user_data:{user_id}']
+            [await Cache().delete(key=key) for key in keys]
         if not peer:
             peer = await Peer.create_peer(peer_id=peer_id, login=login, campus_id=campus_id, user_id=user_id)
         return peer

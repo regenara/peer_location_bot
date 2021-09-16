@@ -86,8 +86,6 @@ class AdminProcesses:
                 f'User.get_user_data:{user.id}',
                 f'User.get_user_from_peer:{peer_id}'
             ]
-            if user.username:
-                keys.append(f'User.get_login_from_username:{user.username.lower()}')
             await user.delete()
             [await Cache().delete(key=key) for key in keys]
 

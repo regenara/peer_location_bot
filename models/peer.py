@@ -6,10 +6,8 @@ from typing import (List,
                     Tuple)
 
 from config import Config
-from db_models.peers import Peer as PeerDB
 from db_models.users import User
 from models.host import Host
-from utils.cache import Cache
 from utils.savers import Savers
 
 
@@ -102,10 +100,7 @@ class Peer:
                     await self._get_extended_data(login=login, peer_id=id, location=location, status=status)
             if is_staff:
                 status = '😎 '
-            peer_from_db = await Savers.get_peer(peer_id=id, login=login, campus_id=campus_id)
-            if peer_from_db.campus_id != campus_id:
-                await PeerDB.update_peer(peer_id=id, campus_id=campus_id)
-                await Cache().delete(key=f'User.get_user_data:{peer_from_db.user_id}')
+            await Savers.get_peer(peer_id=id, login=login, campus_id=campus_id)
             return Peer(id=id, login=login, full_name=full_name, pool_month=pool_month, pool_year=pool_year,
                         coalition=coalition, cursus_data=cursus_data, campus=campus, campus_id=campus_id,
                         time_zone=time_zone, location=location, last_location=last_location, avatar=avatar, link=link,
