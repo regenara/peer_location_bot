@@ -13,7 +13,8 @@ from db_models.campuses import Campus
 from db_models.peers import Peer
 from db_models.users import User
 from db_models.users_peers import UserPeer
-from services.keyboards import (auth_keyboard,
+from services.keyboards import (alone_peer_keyboard,
+                                auth_keyboard,
                                 courses_keyboard,
                                 data_keyboard,
                                 donate_keyboard,
@@ -66,10 +67,11 @@ async def friend_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     else:
         observables = await UserPeer.get_observables(user_id=user.id)
         peer, text = await text_compile.peer_data_compile(user=user, login=friends[0].login, is_single=True)
-        keyboard = peer_keyboard(peers=[peer], friends=friends, observables=observables)
+        keyboard = peer_keyboard(peers=[peer], friends=friends, observables=observables, payload='alone_peer')
+        keyboard = alone_peer_keyboard(user=user, login=peer.login, keyboard=keyboard)
         text = '\n\n'.join((Config.local.friends_list.get(user.language, from_=1, to=1, friends_count=1), text))
     await dp.current_state(user=user.id).set_state(States.GRANTED)
-    await message.answer(text, reply_markup=keyboard)
+    await message.answer(text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
 
 
 @dp.message_handler(lambda message: message.text in ('/friends', Config.local.friends.ru, Config.local.friends.en),
@@ -88,18 +90,19 @@ async def friends_data(message: Message, user_data: Tuple[Campus, Peer, User]):
         peer, text = await text_compile.peer_data_compile(user=user, login=friend.login, is_single=False)
         texts.append(text)
         with suppress(MessageNotModified, MessageToEditNotFound):
-            await message.edit_text('\n\n'.join(texts))
+            await message.edit_text('\n\n'.join(texts), disable_web_page_preview=True)
     text = '\n\n'.join(texts)
     await Cache().set(key=f'Friends:{user.id}:1', value=texts)
     keyboard = peer_keyboard(peers=friends[:10], friends=friends[:10], observables=observables,
-                             payload='' if friends_count < 11 else 'many_friends')
+                             payload='' if friends_count < 11 else 'pagination')
     if friends_count > 10:
         keyboard = pagination_keyboard(action='friends_pagination', count=friends_count, content=1,
                                        limit=10, stop=3, keyboard=keyboard)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
-    await message.answer(text, reply_markup=keyboard)
+    await message.answer(text, reply_markup=keyboard,
+                         disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
 
 
 @dp.message_handler(lambda message: message.text in ('/projects', Config.local.projects.ru, Config.local.projects.en),

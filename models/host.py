@@ -25,8 +25,8 @@ class Host:
         peer_id = data['user']['id']
         return Host(end_at=end_at, begin_at=begin_at, host=host, campus_id=campus_id, login=login, peer_id=peer_id)
 
-    async def get_peer_locations(self, login: str) -> List['Host']:
-        peer_locations = await Config.intra.get_peer_locations(login=login)
+    async def get_peer_locations(self, login: str, all_locations: bool = False) -> List['Host']:
+        peer_locations = await Config.intra.get_peer_locations(login=login, all_locations=all_locations)
         return self._from_list(location_records=peer_locations)
 
     async def get_location_history(self, host: str) -> List['Host']:

@@ -56,6 +56,39 @@ class TextCompile:
         return log_time
 
     @staticmethod
+    def _get_seconds(end_at: str, begin_at: str) -> float:
+        end = datetime.fromisoformat(end_at.replace('Z', '+00:00')).timestamp() if \
+            end_at else datetime.now(timezone('UTC')).timestamp()
+        begin = datetime.fromisoformat(begin_at.replace('Z', '+00:00')).timestamp()
+        return end - begin
+
+    @staticmethod
+    def _get_time_gone(user: User, seconds: float) -> str:
+        seconds_in_year = timedelta(days=365).total_seconds()
+        seconds_in_day = timedelta(days=1).total_seconds()
+        seconds_in_hour = timedelta(hours=1).total_seconds()
+        seconds_in_minute = 60
+        years = int(seconds // seconds_in_year)
+        days = int((seconds - (years * seconds_in_year)) // seconds_in_day)
+        hours = int((seconds - (years * seconds_in_year) - (days * seconds_in_day)) // seconds_in_hour)
+        minutes = int((seconds - (years * seconds_in_year) - (days * seconds_in_day) - (hours * seconds_in_hour)) //
+                      seconds_in_minute)
+        years_gone = f'{years}{Config.local.years.get(user.language)} ' if years else ''
+        days_gone = f'{days}{Config.local.days.get(user.language)} ' if days else ''
+        hours_gone = f'{hours}{Config.local.hours.get(user.language)} ' if hours else ''
+        minutes_gone = f'{minutes}{Config.local.minutes.get(user.language)} ' if minutes else ''
+        return ''.join((years_gone, days_gone, hours_gone, minutes_gone))
+
+    def _last_seen_time_compile(self, user: User, last_seen_time: str, last_location: str) -> str:
+        if not last_seen_time:
+            return Config.local.unknown_location.get(user.language)
+        seconds = self._get_seconds(end_at='', begin_at=last_seen_time)
+        time_gone = self._get_time_gone(user=user, seconds=seconds)
+        if not time_gone:
+            return Config.local.just_now.get(user.language, last_location=last_location)
+        return Config.local.not_on_campus.get(user.language, time_gone=time_gone, last_location=last_location)
+
+    @staticmethod
     def _get_peer_title(status: str, url: str, full_name: str, login: str) -> str:
         return f'{status}{hlink(title=full_name, url=url)} aka {hcode(login)}\n'
 
@@ -127,39 +160,14 @@ class TextCompile:
                f'{courses}\n' \
                f'{campus}' \
                f'{location}'
-        if user.show_avatar and is_single:
-            text = hide_link(url=peer.avatar) + text
+        text = hide_link(url=peer.avatar) + text
         return peer, text
 
-    @staticmethod
-    def _last_seen_time_compile(user: User, last_seen_time: str, last_location: str) -> str:
-        if not last_seen_time:
-            return Config.local.unknown_location.get(user.language)
-        seconds = datetime.now(timezone('UTC')).timestamp() - \
-            datetime.fromisoformat(last_seen_time.replace('Z', '+00:00')).timestamp()
-        seconds_in_day = int(timedelta(days=1).total_seconds())
-        seconds_in_hour = int(timedelta(hours=1).total_seconds())
-        seconds_in_minute = 60
-        days = int(seconds // seconds_in_day)
-        hours = int((seconds - (days * seconds_in_day)) // seconds_in_hour)
-        minutes = int((seconds - (days * seconds_in_day) - (hours * seconds_in_hour)) // seconds_in_minute)
-        days_gone = hours_gone = minutes_gone = ''
-        if days:
-            days_gone = f'{days}{Config.local.days.get(user.language)} '
-        if hours:
-            hours_gone = f'{hours}{Config.local.hours.get(user.language)} '
-        if minutes:
-            minutes_gone = f'{minutes}{Config.local.minutes.get(user.language)} '
-        if not any((days, hours, minutes)):
-            return Config.local.just_now.get(user.language, last_location=last_location)
-        return Config.local.not_on_campus.get(user.language, days_gone=days_gone, hours_gone=hours_gone,
-                                              minutes_gone=minutes_gone, last_location=last_location)
-
     async def peer_locations_compile(self, user: User, login: str, page: int = 0,
-                                     message_text: str = None) -> Tuple[str, int]:
+                                     message_text: str = None) -> Tuple[str, int, bool]:
         is_wrong = self._is_wrong_name(name=login)
         if is_wrong:
-            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0
+            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0, False
         try:
             locations = await Host().get_peer_locations(login=login)
             if not page:
@@ -169,11 +177,11 @@ class TextCompile:
             else:
                 title = self._get_title_from_message(message_text=message_text)
         except UnknownIntraError as e:
-            return f'{hbold(login, ":", sep="")} {e}', 0
+            return f'{hbold(login, ":", sep="")} {e}', 0, False
         except NotFoundIntraError:
-            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0
+            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0, False
         if not locations:
-            return Config.local.not_logged.get(user.language, title=title), 0
+            return Config.local.not_logged.get(user.language, title=title), 0, True
         count = len(locations[page * 10:])
         locations = paginate(data=locations, page=page, limit=10)
         texts = []
@@ -183,7 +191,7 @@ class TextCompile:
                                           time_zone=campus.time_zone, now=Config.local.now.get(user.language))
             text = f'{hbold(campus.name)} {hcode(location.host)}\n{log_time}'
             texts.append(text)
-        return title + '\n'.join(texts), count
+        return title + '\n'.join(texts), count, True
 
     async def host_data_compile(self, user: User, host: str, page: int = 0) -> Tuple[str, Union[Peer, None]]:
         is_wrong = self._is_wrong_name(name=host)
@@ -231,10 +239,10 @@ class TextCompile:
         return f'\n\n'.join(texts), None
 
     async def peer_feedbacks_compile(self, user: User, login: str, page: int = 0,
-                                     message_text: str = None) -> Tuple[str, int]:
+                                     message_text: str = None) -> Tuple[str, int, bool]:
         is_wrong = self._is_wrong_name(name=login)
         if is_wrong:
-            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0
+            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), 0, False
         user.show_avatar = False
         try:
             feedbacks = await Feedback().get_peer_feedbacks(login=login)
@@ -245,11 +253,11 @@ class TextCompile:
             else:
                 title = self._get_title_from_message(message_text=message_text)
         except UnknownIntraError as e:
-            return f'{hbold(login, ":", sep="")} {e}', 0
+            return f'{hbold(login, ":", sep="")} {e}', 0, False
         except NotFoundIntraError:
-            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0
+            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0, False
         if not feedbacks:
-            return Config.local.not_eval.get(user.language, title=title), 0
+            return Config.local.not_eval.get(user.language, title=title), 0, True
         count = len(feedbacks[page * 5:])
         feedbacks = paginate(data=feedbacks, page=page, limit=5)
         texts = []
@@ -264,7 +272,7 @@ class TextCompile:
                    f'{hbold(Config.local.rating.get(user.language), ":", sep="")} {feedback.rating}/5\n' \
                    f'{hbold(Config.local.final_mark.get(user.language), ":", sep="")} {final_mark}'
             texts.append(text)
-        return title + f'\n{"—" * 20}\n'.join(texts), count
+        return title + f'\n{"—" * 20}\n'.join(texts), count, True
 
     async def free_locations_compile(self, user: User, campus_id: int, page: int = 0) -> Tuple[str, int, int]:
         campus = await self._get_campus(campus_id=campus_id)
@@ -325,6 +333,53 @@ class TextCompile:
             text = f'{hlink(title=login, url=url)}  |  {project["final_mark"]}  |  {marked_at}'
             texts.append(text)
         return title + '\n'.join(texts)
+
+    async def time_peers_compile(self, user: User, login: str) -> Tuple[str, bool]:
+        is_wrong = self._is_wrong_name(name=login)
+        if is_wrong:
+            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt")), False
+        try:
+            data = await Host().get_peer_locations(login=login, all_locations=True)
+            peer = await Peer().get_peer(login=login, extended=False)
+            title = self._get_peer_title(status=peer.status, url=peer.link,
+                                         full_name=peer.full_name, login=peer.login)
+        except UnknownIntraError as e:
+            return f'{hbold(login, ":", sep="")} {e}', False
+        except NotFoundIntraError:
+            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), False
+        if not data:
+            return Config.local.not_logged.get(user.language, title=title), True
+        total_seconds = 0
+        locations = {}
+        maximum = {'seconds': 0}
+        for location in data:
+            seconds = self._get_seconds(end_at=location.end_at, begin_at=location.begin_at)
+            if maximum['seconds'] < seconds:
+                maximum.update({
+                    'host': location.host, 'campus_id': location.campus_id, 'seconds': seconds,
+                    'end_at': location.end_at, 'begin_at': location.begin_at
+                })
+            locations.setdefault(location.host, {'seconds': 0, 'campus_id': location.campus_id})
+            locations[location.host]['seconds'] += seconds
+            total_seconds += seconds
+        time_gone = self._get_time_gone(user=user, seconds=total_seconds)
+        total_time = Config.local.total_time.get(user.language, total=time_gone)
+        max_time_campus = await self._get_campus(campus_id=maximum['campus_id'])
+        max_time_log = self._get_log_time(begin_at_iso=maximum['begin_at'], end_at_iso=maximum['end_at'],
+                                          time_zone=max_time_campus.time_zone, now=Config.local.now.get(user.language))
+        max_time_total = self._get_time_gone(user=user, seconds=maximum['seconds'])
+        max_time = Config.local.max_time.get(user.language, campus=hbold(max_time_campus.name),
+                                             host=hcode(maximum['host']), log_time=max_time_log, total=max_time_total)
+        locations = sorted(locations.items(), key=lambda tup: (tup[1]['seconds']), reverse=True)[:10]
+        texts = []
+        for location in locations:
+            campus = await self._get_campus(campus_id=location[1]['campus_id'])
+            location_total = self._get_time_gone(user=user, seconds=location[1]['seconds'])
+            text = f'🖥 {hbold(campus.name)} {hcode(location[0])}\n' \
+                   f'⏱ {location_total}'
+            texts.append(text)
+        locations_time = Config.local.locations_time.get(user.language, locations='\n'.join(texts))
+        return title + '\n\n'.join((total_time, max_time, locations_time)), True
 
     @staticmethod
     async def donate_text_compile(user: User) -> str:

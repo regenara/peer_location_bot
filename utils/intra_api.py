@@ -95,11 +95,12 @@ class IntraAPI:
                         continue
 
                     if response.status == 401 and (await response.json()).get('message') == 'The access token expired':
-                        self._logger.error('Request=%s %s [%s] | %s | %s | token expired | refresh',
+                        self._logger.error('Request=%s %s [%s] | %s | %s | token expired | refresh, reset attempts',
                                            attempts, response.reason, response.status, url, access_token)
                         self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
                                                                               client_id=app['client_id'],
                                                                               client_secret=app['client_secret'])
+                        attempts = 1
 
                     if response.status == 404:
                         self._logger.error('Request=%s %s [%s] | %s | %s | raise NotFoundIntraError',
@@ -154,9 +155,24 @@ class IntraAPI:
         return await self._request(endpoint)
 
     @cache(ttl=300)
-    async def get_peer_locations(self, login: str) -> List[Dict[str, Any]]:
+    async def get_peer_locations(self, login: str, all_locations: bool) -> List[Dict[str, Any]]:
         endpoint = f'users/{login}/locations'
-        return await self._request(endpoint, params={'per_page': 50})
+        if not all_locations:
+            return await self._request(endpoint, params={'per_page': 50})
+        locations = []
+        page = 1
+        params = {
+            'page': page,
+            'per_page': 100
+        }
+        data = await self._request(endpoint, params=params)
+        locations.extend(data)
+        while data:
+            page += 1
+            params['page'] = page
+            data = await self._request(endpoint, params=params)
+            locations.extend(data)
+        return locations
 
     @cache(ttl=3600)
     async def get_peer_feedbacks(self, login: str) -> List[Dict[str, Any]]:

@@ -2,7 +2,8 @@ from contextlib import suppress
 from typing import (Callable,
                     Tuple)
 
-from aiogram.types import CallbackQuery
+from aiogram.types import (CallbackQuery,
+                           InlineKeyboardMarkup)
 from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageNotModified,
                                       MessageToEditNotFound,
@@ -17,13 +18,25 @@ from db_models.peers import Peer
 from db_models.projects import Project
 from db_models.users import User
 from db_models.users_peers import UserPeer
-from services.keyboards import (courses_keyboard,
+from services.keyboards import (alone_peer_keyboard,
+                                courses_keyboard,
                                 data_keyboard,
                                 keyboard_normalize,
                                 pagination_keyboard,
                                 peer_keyboard)
 from services.states import States
 from utils.text_compile import text_compile
+from .messages_handlers import get_text_and_keyboard
+
+
+async def action_peer(user: User, callback_query: CallbackQuery, method: Callable, action: str = None, limit: int = 3,
+                      stop: int = 0) -> Tuple[str, InlineKeyboardMarkup]:
+    await dp.current_state(user=user.id).set_state(States.THROTTLER)
+    login = callback_query.data.split('.')[-1]
+    message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    await message.bot.send_chat_action(user.id, 'typing')
+    return await get_text_and_keyboard(user=user, message=message, method=method, login=login, action=action,
+                                       limit=limit, stop=stop)
 
 
 async def action_peers(user: User, callback_query: CallbackQuery, current_count: int, trigger: str,
@@ -177,14 +190,21 @@ async def friends_list(callback_query: CallbackQuery, user_data: Tuple[Campus, P
                                                                friends=friends, friends_count=friends_count)
     count = len(friends[(page - 1) * 10:])
     friends = paginate(friends, page=page - 1, limit=10)
-    keyboard = peer_keyboard(peers=friends, friends=friends, observables=observables,
-                             payload='' if friends_count < 11 else 'many_friends')
+    payload = ''
+    if friends_count > 11:
+        payload = 'pagination'
+    if friends_count == 1:
+        payload = 'alone_peer'
+    keyboard = peer_keyboard(peers=friends, friends=friends, observables=observables, payload=payload)
     if friends_count + 1 > 10:
         keyboard = pagination_keyboard(action='friends_pagination', count=count, content=current_page,
                                        limit=10, stop=3, page=page - 1, keyboard=keyboard)
+    if friends_count == 1:
+        keyboard = alone_peer_keyboard(user=user, login=friends[0].login, keyboard=keyboard)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageNotModified, MessageToEditNotFound):
-        await callback_query.message.edit_text(text, reply_markup=keyboard)
+        await callback_query.message.edit_text(text, reply_markup=keyboard,
+                                               disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
 
 
 @dp.callback_query_handler(text_startswith=('add', 'remove'), state='granted')
@@ -220,3 +240,44 @@ async def projects_(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer
         await callback_query.message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     await callback_query.message.answer(text, reply_markup=keyboard)
+
+
+@dp.callback_query_handler(text_startswith='back.peer', state='granted')
+async def back_to_peer(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    *_, user = user_data
+    await dp.current_state(user=user.id).set_state(States.THROTTLER)
+    login = callback_query.data.split('.')[-1]
+    message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    await message.bot.send_chat_action(user.id, 'typing')
+    peer, text = await text_compile.peer_data_compile(user=user, login=login, is_single=True)
+    friends = await UserPeer.get_friends(user_id=user.id)
+    observables = await UserPeer.get_observables(user_id=user.id)
+    keyboard = peer_keyboard(peers=[peer], friends=friends, observables=observables, payload='alone_peer')
+    keyboard = alone_peer_keyboard(user=user, login=peer.login, keyboard=keyboard)
+    await dp.current_state(user=user.id).set_state(States.GRANTED)
+    with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
+        await message.delete()
+    await callback_query.message.answer(text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
+
+
+@dp.callback_query_handler(text_startswith='last_locations', state='granted')
+async def peer_locations(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    text, keyboard = await action_peer(user=user_data[-1], callback_query=callback_query,
+                                       method=text_compile.peer_locations_compile,
+                                       action='peer_locations_pagination', limit=10, stop=4)
+    await callback_query.message.answer(text, reply_markup=keyboard)
+
+
+@dp.callback_query_handler(text_startswith='time_statistics', state='granted')
+async def peer_times(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    text, keyboard = await action_peer(user=user_data[-1], callback_query=callback_query,
+                                       method=text_compile.time_peers_compile)
+    await callback_query.message.answer(text, reply_markup=keyboard)
+
+
+@dp.callback_query_handler(text_startswith='feedbacks', state='granted')
+async def peer_feedbacks(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    text, keyboard = await action_peer(user=user_data[-1], callback_query=callback_query,
+                                       method=text_compile.peer_feedbacks_compile,
+                                       action='feedbacks_pagination', limit=5, stop=9)
+    await callback_query.message.answer(text, disable_web_page_preview=True, reply_markup=keyboard)

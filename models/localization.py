@@ -39,6 +39,7 @@ class Localization:
     location = Languages()
     ask_adm = Languages()
     piscine = Languages()
+    years = Languages()
     days = Languages()
     hours = Languages()
     minutes = Languages()
@@ -73,6 +74,10 @@ class Localization:
     not_eval = Languages()
     not_closed = Languages()
 
+    total_time = Languages()
+    max_time = Languages()
+    locations_time = Languages()
+
     menu = Languages()
     friends = Languages()
     locations = Languages()
@@ -88,6 +93,8 @@ class Localization:
     avatar = Languages()
     anon = Languages()
     default_campus = Languages()
+
+    alone_peer_menu = Languages()
 
     last_user = Languages()
     host_not_found = Languages()
@@ -134,6 +141,8 @@ class Localization:
         self.ask_adm.en = data['user_info']['en']['ask_adm']
         self.piscine.ru = data['user_info']['ru']['piscine']
         self.piscine.en = data['user_info']['en']['piscine']
+        self.years.ru = data['user_info']['ru']['years']
+        self.years.en = data['user_info']['en']['years']
         self.days.ru = data['user_info']['ru']['days']
         self.days.en = data['user_info']['en']['days']
         self.hours.ru = data['user_info']['ru']['hours']
@@ -195,6 +204,13 @@ class Localization:
         self.not_closed.ru = data['feedbacks']['ru']['not_closed']
         self.not_closed.en = data['feedbacks']['en']['not_closed']
 
+        self.total_time.ru = data['times_info']['ru']['total']
+        self.total_time.en = data['times_info']['en']['total']
+        self.max_time.ru = data['times_info']['ru']['max']
+        self.max_time.en = data['times_info']['en']['max']
+        self.locations_time.ru = data['times_info']['ru']['locations']
+        self.locations_time.en = data['times_info']['en']['locations']
+
         self.menu.ru = data['menu']['ru']
         self.menu.en = data['menu']['en']
         self.friends.ru = data['menu']['ru']['friends']
@@ -223,6 +239,9 @@ class Localization:
         self.default_campus.ru = data['settings_menu']['ru']['default_campus']
         self.default_campus.en = data['settings_menu']['en']['default_campus']
 
+        self.alone_peer_menu.ru = data['alone_peer_menu']['ru']
+        self.alone_peer_menu.en = data['alone_peer_menu']['en']
+
         self.last_user.ru = data['host']['ru']['last_user']
         self.last_user.en = data['host']['en']['last_user']
         self.host_not_found.ru = data['host']['ru']['not_found']
@@ -239,3 +258,4 @@ class Localization:
         self.donate_text_tops.en = data['donate_text']['en']['tops']
         self.donate_link.ru = data['donate_text']['ru']['donate_link']
         self.donate_link.en = data['donate_text']['en']['donate_link']
+
