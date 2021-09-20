@@ -12,6 +12,7 @@ For [Ecole42](https://42.fr/) students only
 * Adding peers to favorites to receive notifications when they log in at the workplace
 * Receiving peer's project reviews
 * Getting the latest peer's workplaces
+* Peer time statistics
 * Getting information about the workplace (current and past peers)
 * Getting a list of vacant places on the campus
 * Getting a list of the latest peers who have passed a particular project

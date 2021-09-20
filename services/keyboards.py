@@ -84,6 +84,12 @@ def peer_keyboard(peers: List[Peer], friends: List[PeerDB], observables: List[Pe
     return keyboard
 
 
+def alone_peer_keyboard(user: User, login: str, keyboard: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
+    for k, v in Config.local.alone_peer_menu.get(user.language).items():
+        keyboard.row(InlineKeyboardButton(text=v, callback_data=f'{k}.{login}'))
+    return keyboard
+
+
 def pagination_keyboard(action: str, count: int, content: Union[str, int], limit: int, stop: int,
                         page: int = 0, keyboard: InlineKeyboardMarkup = None,
                         back_button_data: Tuple[str, str] = None) -> InlineKeyboardMarkup:
@@ -136,15 +142,20 @@ def data_keyboard(data: Union[List[Project], List[Campus]], action: str, content
 
 def keyboard_normalize(friends: List[PeerDB], observables: List[PeerDB],
                        buttons: List[List[InlineKeyboardButton]], payload: str) -> InlineKeyboardMarkup:
-    if payload:
+    if payload == 'pagination':
         peers_data = [button.callback_data.split('.')[1:3] for row in buttons for button in row][:-2:2]
+    elif payload == 'alone_peer':
+        peers_data = [button.callback_data.split('.')[1:3] for row in buttons for button in row][:2:2]
     else:
         peers_data = [button.callback_data.split('.')[1:3] for row in buttons for button in row][::2]
     peers = []
     for peer in peers_data:
         peers.append(Peer(id=int(peer[0]), login=peer[1]))
     keyboard = peer_keyboard(peers=peers, friends=friends, observables=observables, payload=payload)
-    if payload:
+    if payload == 'pagination':
         pagination_buttons = buttons[-1:][0]
         keyboard.row(*pagination_buttons)
+    elif payload == 'alone_peer':
+        alone_peer_buttons = buttons[1:]
+        [keyboard.row(button[0]) for button in alone_peer_buttons]
     return keyboard
