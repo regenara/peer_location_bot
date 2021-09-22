@@ -54,10 +54,11 @@ async def action_peer(user: User, message: Message, method: Callable, action: st
 @dp.message_handler(lambda message: message.text.startswith('@') and len(message.text) > 2, state='granted')
 async def peer_data_from_username(message: Message, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
-    username = message.text[1:].lower().strip()
-    login = await User.get_login_from_username(username=username)
+    username_or_user_id = message.text[1:].lower().strip()
+    login = await User.get_login(username_or_user_id=username_or_user_id)
     if not login:
-        await message.answer(Config.local.not_found_username.get(user.language, username=username.replace("<", "&lt")))
+        await message.answer(Config.local.not_found_username.get(user.language,
+                                                                 username=username_or_user_id.replace("<", "&lt")))
     else:
         message.text = login
         await peer_data(message=message, user_data=user_data)
