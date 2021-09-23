@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import suppress
 from typing import Tuple
 
@@ -5,7 +6,8 @@ from aiogram.types import Message
 from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageNotModified,
                                       MessageToDeleteNotFound,
-                                      MessageToEditNotFound)
+                                      MessageToEditNotFound,
+                                      RetryAfter)
 
 from bot import dp
 from config import Config
@@ -89,8 +91,12 @@ async def friends_data(message: Message, user_data: Tuple[Campus, Peer, User]):
         texts[0] = Config.local.friends_list.get(user.language, from_=1, to=i, friends_count=friends_count)
         peer, text = await text_compile.peer_data_compile(user=user, login=friend.login, is_single=False)
         texts.append(text)
-        with suppress(MessageNotModified, MessageToEditNotFound):
-            await message.edit_text('\n\n'.join(texts), disable_web_page_preview=True)
+        try:
+            with suppress(MessageNotModified, MessageToEditNotFound):
+                await message.edit_text('\n\n'.join(texts), disable_web_page_preview=True)
+        except RetryAfter as e:
+            await message.answer(str(e))
+            await asyncio.sleep(e.timeout)
     text = '\n\n'.join(texts)
     await Cache().set(key=f'Friends:{user.id}:1', value=texts)
     keyboard = peer_keyboard(peers=friends[:10], friends=friends[:10], observables=observables,

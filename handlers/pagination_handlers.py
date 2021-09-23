@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import suppress
 from typing import Tuple
 
@@ -5,7 +6,8 @@ from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageNotModified,
                                       MessageToDeleteNotFound,
-                                      MessageToEditNotFound)
+                                      MessageToEditNotFound,
+                                      RetryAfter)
 from aiogram.utils.parts import paginate
 
 from bot import (bot,
@@ -154,8 +156,12 @@ async def friends_pagination(callback_query: CallbackQuery, user_data: Tuple[Cam
         peer, text = await text_compile.peer_data_compile(user=user, login=friend.login, is_single=False)
         texts.append(text)
         if not i % 3:
-            with suppress(MessageNotModified, MessageToEditNotFound):
-                await callback_query.message.edit_text('\n\n'.join(texts), disable_web_page_preview=True)
+            try:
+                with suppress(MessageNotModified, MessageToEditNotFound):
+                    await callback_query.message.edit_text('\n\n'.join(texts), disable_web_page_preview=True)
+            except RetryAfter as e:
+                await callback_query.message.answer(str(e))
+                await asyncio.sleep(e.timeout)
     text = '\n\n'.join(texts)
     await Cache().set(key=f'Friends:{user.id}:{page + 1}', value=texts)
     keyboard = peer_keyboard(peers=friends, friends=friends, observables=observables,

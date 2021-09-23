@@ -55,9 +55,13 @@ class User(db.Model, TimeMixin):
         return await cls.query.select_from(Peer.join(User)).where(Peer.id == peer_id).gino.first()
 
     @classmethod
-    async def get_login_from_username(cls, username: str) -> str:
+    async def get_login(cls, username_or_user_id: str) -> str:
+        if username_or_user_id.isdigit():
+            where = (cls.id == int(username_or_user_id))
+        else:
+            where = (db.func.lower(cls.username) == username_or_user_id)
         return await Peer.query.select_from(Peer.join(cls)).where(
-            (db.func.lower(cls.username) == username) & (cls.show_me.is_(True))).gino.load(Peer.login).first()
+            where & (cls.show_me.is_(True))).gino.load(Peer.login).first()
 
     @classmethod
     @cache(serialization=True, is_user_data=True)
