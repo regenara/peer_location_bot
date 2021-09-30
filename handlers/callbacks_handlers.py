@@ -186,6 +186,7 @@ async def friends_list(callback_query: CallbackQuery, user_data: Tuple[Campus, P
             for button in row][-1].split('.')
     if friends_count + 1 > 10 and raws[0] == 'friends_pagination':
         current_page = int(raws[1])
+    await callback_query.message.bot.send_chat_action(user.id, 'typing')
     text, page = await text_compile.friends_list_normalization(user=user, current_page=current_page, removable=login,
                                                                friends=friends, friends_count=friends_count)
     count = len(friends[(page - 1) * 10:])
