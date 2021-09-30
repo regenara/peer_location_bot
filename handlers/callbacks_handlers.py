@@ -202,10 +202,11 @@ async def friends_list(callback_query: CallbackQuery, user_data: Tuple[Campus, P
                                        limit=10, stop=3, page=page - 1, keyboard=keyboard)
     if friends_count == 1:
         keyboard = alone_peer_keyboard(user=user, login=friends[0].login, keyboard=keyboard)
+    with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
+        await callback_query.message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
-    with suppress(MessageNotModified, MessageToEditNotFound):
-        await callback_query.message.edit_text(text, reply_markup=keyboard,
-                                               disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
+    await callback_query.message.answer(text, reply_markup=keyboard,
+                                        disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
 
 
 @dp.callback_query_handler(text_startswith=('add', 'remove'), state='granted')
