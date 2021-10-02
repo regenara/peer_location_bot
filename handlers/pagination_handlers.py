@@ -140,7 +140,8 @@ async def friends_pagination(callback_query: CallbackQuery, user_data: Tuple[Cam
     await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
     page = int(callback_query.data.split('.')[-1])
-    await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    with suppress(MessageNotModified, MessageToEditNotFound):
+        await callback_query.message.edit_text(Config.local.wait.get(user.language))
     texts = ['']
     friends = await UserPeer.get_friends(user_id=user.id)
     count = len(friends[page * 10:])

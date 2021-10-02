@@ -9,7 +9,8 @@ from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageToEditNotFound,
                                       RetryAfter)
 
-from bot import dp
+from bot import (bot,
+                 dp)
 from config import Config
 from db_models.campuses import Campus
 from db_models.peers import Peer
@@ -109,8 +110,8 @@ async def friends_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
-    await message.answer(text, reply_markup=keyboard,
-                         disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
+    await bot.send_message(user.id, text, reply_markup=keyboard,
+                           disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
 
 
 @dp.message_handler(lambda message: message.text in ('/projects', Config.local.projects.ru, Config.local.projects.en),
@@ -133,7 +134,7 @@ async def free_locations(message: Message, user_data: Tuple[Campus, Peer, User])
                                        content=peer.campus_id, limit=40, stop=9)
         with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
             await message.delete()
-        await message.answer(text, reply_markup=keyboard)
+        await bot.send_message(user.id, text, reply_markup=keyboard)
     else:
         campuses = await Campus.get_campuses()
         keyboard = data_keyboard(data=campuses, action='locations_campuses', content='locations', limit=30)

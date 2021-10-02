@@ -9,7 +9,8 @@ from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageNotModified,
                                       MessageToEditNotFound)
 
-from bot import dp
+from bot import (bot,
+                 dp)
 from config import Config
 from db_models.campuses import Campus
 from db_models.peers import Peer
@@ -102,7 +103,7 @@ async def host_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
-    await message.answer(text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
+    await bot.send_message(user.id, text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
 
 
 @dp.message_handler(lambda message: len(message.text.split()) == 1, state='granted')
@@ -149,5 +150,5 @@ async def peers_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
-    await message.answer('\n\n'.join(texts), reply_markup=keyboard,
-                         disable_web_page_preview=user.show_avatar and len(peers) != 1)
+    await bot.send_message(user.id, '\n\n'.join(texts), reply_markup=keyboard,
+                           disable_web_page_preview=user.show_avatar and len(peers) != 1)

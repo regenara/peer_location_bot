@@ -11,7 +11,8 @@ from aiogram.utils.exceptions import (MessageCantBeDeleted,
 from aiogram.utils.parts import paginate
 from asyncpg.exceptions import UniqueViolationError
 
-from bot import dp
+from bot import (bot,
+                 dp)
 from config import Config
 from db_models.campuses import Campus
 from db_models.peers import Peer
@@ -33,8 +34,9 @@ async def action_peer(user: User, callback_query: CallbackQuery, method: Callabl
                       stop: int = 0) -> Tuple[str, InlineKeyboardMarkup]:
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
     login = callback_query.data.split('.')[-1]
-    message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
-    await message.bot.send_chat_action(user.id, 'typing')
+    with suppress(MessageNotModified, MessageToEditNotFound):
+        message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    await bot.send_chat_action(user.id, 'typing')
     return await get_text_and_keyboard(user=user, message=message, method=method, login=login, action=action,
                                        limit=limit, stop=stop)
 
@@ -119,7 +121,7 @@ async def campus_projects(callback_query: CallbackQuery, user_data: Tuple[Campus
     campus_id = int(callback_query.data.split('.')[2])
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await callback_query.message.delete()
-    message = await callback_query.message.answer(Config.local.wait.get(user.language))
+    message = await bot.send_message(user.id, Config.local.wait.get(user.language))
     await callback_query.message.bot.send_chat_action(user.id, 'typing')
     text, count, _ = await text_compile.free_locations_compile(user=user, campus_id=campus_id)
     back_button_data = (Config.local.back.get(user.language), 'back.locations')
@@ -128,7 +130,7 @@ async def campus_projects(callback_query: CallbackQuery, user_data: Tuple[Campus
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
-    await message.answer(text, reply_markup=keyboard)
+    await bot.send_message(user.id, text, reply_markup=keyboard)
 
 
 @dp.callback_query_handler(is_back_to_campuses_from_locations=True, state='granted')
@@ -148,13 +150,14 @@ async def campus_locations(callback_query: CallbackQuery, user_data: Tuple[Campu
     await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
     campus_id = int(callback_query.data.split('.')[2])
-    message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    with suppress(MessageNotModified, MessageToEditNotFound):
+        message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
     text, count, _ = await text_compile.free_locations_compile(user=user, campus_id=campus_id)
     keyboard = pagination_keyboard(action='locations_pagination', count=count, content=campus_id, limit=40, stop=9)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
-    await message.answer(text, reply_markup=keyboard)
+    await bot.send_message(user.id, text, reply_markup=keyboard)
 
 
 @dp.callback_query_handler(text_startswith=('on', 'off'), state='granted')
@@ -205,8 +208,8 @@ async def friends_list(callback_query: CallbackQuery, user_data: Tuple[Campus, P
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await callback_query.message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
-    await callback_query.message.answer(text, reply_markup=keyboard,
-                                        disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
+    await bot.send_message(user.id, text, reply_markup=keyboard,
+                           disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
 
 
 @dp.callback_query_handler(text_startswith=('add', 'remove'), state='granted')
@@ -241,7 +244,7 @@ async def projects_(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await callback_query.message.delete()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
-    await callback_query.message.answer(text, reply_markup=keyboard)
+    await bot.send_message(user.id, text, reply_markup=keyboard)
 
 
 @dp.callback_query_handler(text_startswith='back.peer', state='granted')
@@ -249,7 +252,8 @@ async def back_to_peer(callback_query: CallbackQuery, user_data: Tuple[Campus, P
     *_, user = user_data
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
     login = callback_query.data.split('.')[-1]
-    message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    with suppress(MessageNotModified, MessageToEditNotFound):
+        message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
     await message.bot.send_chat_action(user.id, 'typing')
     peer, text = await text_compile.peer_data_compile(user=user, login=login, is_single=True)
     friends = await UserPeer.get_friends(user_id=user.id)
@@ -259,7 +263,7 @@ async def back_to_peer(callback_query: CallbackQuery, user_data: Tuple[Campus, P
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
-    await callback_query.message.answer(text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
+    await bot.send_message(user.id, text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
 
 
 @dp.callback_query_handler(text_startswith='last_locations', state='granted')
