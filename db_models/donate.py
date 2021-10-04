@@ -38,13 +38,13 @@ class Donate(db.Model, TimeMixin):
         return donate
 
     @classmethod
-    @cache(serialization=True, deserialization=True)
+    @cache(ttl=86400, serialization=True, deserialization=True)
     async def get_last_month_donate(cls) -> List['Donate']:
         past = datetime.utcnow() - timedelta(days=datetime.now().day)
         return await cls.query.where(cls.created_at > past).order_by(cls.created_at.desc()).gino.all()
 
     @classmethod
-    @cache()
+    @cache(ttl=86400)
     async def get_top_donaters(cls) -> Tuple[str, Decimal]:
         sums = db.func.sum(cls.sum)
         return await db.select([cls.nickname, sums]).group_by(
