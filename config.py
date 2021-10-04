@@ -46,6 +46,8 @@ class Config:
     localization = getenv('LOCALIZATION', 'localization.json')
     local: Localization = None
 
+    queue: list = []
+
     @classmethod
     async def start(cls):
         cls.fernet = Fernet(cls.salt.encode())

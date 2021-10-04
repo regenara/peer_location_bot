@@ -8,6 +8,7 @@ from db_models import db
 from db_models.campuses import Campus
 from db_models.peers import Peer
 from db_models.users import User
+from services.states import States
 from utils.cache import Cache
 from utils.intra_api import (IntraAPI,
                              NotFoundIntraError,
@@ -80,6 +81,20 @@ class Updater:
                     User.outerjoin(Peer)).limit(100).offset(offset).order_by(User.id)
                 result = await query.gino.load((User, Peer.id)).all()
         self._logger.info('Completed usernames updater')
+
+    async def clear_queue(self):
+        from bot import dp
+        from config import Config
+
+        while True:
+            self._logger.info('Start clear queue')
+            queue = Config.queue.copy()
+            Config.queue = []
+            for user_id in queue:
+                await dp.current_state(user=user_id).set_state(States.GRANTED)
+                self._logger.info('Clear queue for user_id %s', user_id)
+            self._logger.info('Completed clear queue, sleep 120 seconds')
+            await asyncio.sleep(120)
 
     async def updater(self):
         while True:

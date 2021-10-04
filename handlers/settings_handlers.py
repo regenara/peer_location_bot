@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import suppress
 from typing import Tuple
 
@@ -36,8 +35,7 @@ async def welcome_callback(callback_query: CallbackQuery):
 async def callback_throttler(_: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
     await bot.send_message(user.id, Config.local.antiflood.get(user.language))
-    await asyncio.sleep(120)
-    await dp.current_state(user=user.id).set_state(States.GRANTED)
+    Config.queue.append(user.id)
 
 
 async def action_settings(callback_query: CallbackQuery, **kwargs):
