@@ -232,12 +232,12 @@
    "donate_text":{
       "ru":{
          "donate_link":"Пожертвовать",
-         "title":"\uD83D\uDCB8 <b>Донаты на оплату сервера</b>\n\n<b>Собрано в этом месяце:</b> <code>{sum}/800.0руб</code>\n{nicknames}",
+         "title":"\uD83D\uDCB8 <b>Донаты на оплату сервера</b>\n\n<b>Собрано в этом месяце:</b> <code>{sum}/600.0руб</code>\n{nicknames}",
          "tops":"<b>Топ донатеры:</b>\n{tops}"
       },
       "en":{
          "donate_link":"Donate",
-         "title":"\uD83D\uDCB8 <b>Donates to pay for the server</b>\n\n<b>Money was donated this month:</b> <code>{sum}/800.0rub</code>\n{nicknames}",
+         "title":"\uD83D\uDCB8 <b>Donates to pay for the server</b>\n\n<b>Money was donated this month:</b> <code>{sum}/600.0rub</code>\n{nicknames}",
          "tops":"<b>Top donaters:</b>\n{tops}"
       }
    }
