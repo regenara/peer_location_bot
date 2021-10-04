@@ -46,7 +46,7 @@ class Config:
     localization = getenv('LOCALIZATION', 'localization.json')
     local: Localization = None
 
-    queue: list = []
+    queue: set = set()
 
     @classmethod
     async def start(cls):

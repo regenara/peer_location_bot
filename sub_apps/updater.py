@@ -89,7 +89,7 @@ class Updater:
         while True:
             self._logger.info('Start clear queue')
             queue = Config.queue.copy()
-            Config.queue = []
+            Config.queue = set()
             for user_id in queue:
                 await dp.current_state(user=user_id).set_state(States.GRANTED)
                 self._logger.info('Clear queue for user_id %s', user_id)

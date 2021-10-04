@@ -61,8 +61,11 @@ class IsRemoveFriend(BoundFilter):
         message_text = callback_query.message.text or ''
         remove = callback_query.data.split('.')[0] == 'remove'
         title = message_text.split('\n')[0]
-        return any(title[:title.rindex(' ')] in s for s in
-                   (Config.local.friends_list.ru, Config.local.friends_list.en)) and remove
+        try:
+            return any(title[:title.rindex(' ')] in s for s in
+                       (Config.local.friends_list.ru, Config.local.friends_list.en)) and remove
+        except ValueError:
+            return False
 
 
 class IsBackToCourses(BoundFilter):
