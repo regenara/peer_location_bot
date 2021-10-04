@@ -33,9 +33,9 @@ async def welcome_callback(callback_query: CallbackQuery):
 
 
 @dp.callback_query_handler(state='throttler')
-async def callback_throttler(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+async def callback_throttler(_: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
-    await callback_query.answer(Config.local.antiflood.get(user.language))
+    await bot.send_message(user.id, Config.local.antiflood.get(user.language))
     await asyncio.sleep(120)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
 

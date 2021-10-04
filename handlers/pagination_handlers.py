@@ -49,13 +49,13 @@ async def free_locations_pagination(callback_query: CallbackQuery, user_data: Tu
     await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
     campus_id, page = map(int, callback_query.data.split('.')[1:])
+    await callback_query.answer(text=Config.local.wait.get(user.language))
     text, count, page = await text_compile.free_locations_compile(user=user, campus_id=campus_id, page=page)
     back_button_data = None
     if not user.use_default_campus:
         back_button_data = (Config.local.back.get(user.language), 'back.locations')
     keyboard = pagination_keyboard(action='locations_pagination', count=count, content=campus_id, limit=40,
                                    stop=9, page=page, back_button_data=back_button_data)
-    await callback_query.answer()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageNotModified, MessageToEditNotFound):
         await callback_query.message.edit_text(text, reply_markup=keyboard)
@@ -67,12 +67,12 @@ async def peer_locations_pagination(callback_query: CallbackQuery, user_data: Tu
     *_, user = user_data
     action, login, page = callback_query.data.split('.')
     page = int(page)
+    await callback_query.answer(text=Config.local.wait.get(user.language))
     text, count, _ = await text_compile.peer_locations_compile(user=user, login=login, page=page,
                                                                message_text=callback_query.message.text)
     back_button_data = (Config.local.back.get(user.language), f'back.peer.{login}')
     keyboard = pagination_keyboard(action=action, count=count, content=login, limit=10, stop=4,
                                    page=page, back_button_data=back_button_data)
-    await callback_query.answer()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageNotModified, MessageToEditNotFound):
         await callback_query.message.edit_text(text, disable_web_page_preview=True, reply_markup=keyboard)
@@ -84,12 +84,12 @@ async def feedbacks_pagination(callback_query: CallbackQuery, user_data: Tuple[C
     *_, user = user_data
     action, login, page = callback_query.data.split('.')
     page = int(page)
+    await callback_query.answer(text=Config.local.wait.get(user.language))
     text, count, _ = await text_compile.peer_feedbacks_compile(user=user, login=login, page=page,
                                                                message_text=callback_query.message.text)
     back_button_data = (Config.local.back.get(user.language), f'back.peer.{login}')
     keyboard = pagination_keyboard(action=action, count=count, content=login, limit=5, stop=9,
                                    page=page, back_button_data=back_button_data)
-    await callback_query.answer()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageNotModified, MessageToEditNotFound):
         await callback_query.message.edit_text(text, disable_web_page_preview=True, reply_markup=keyboard)
@@ -101,6 +101,7 @@ async def host_pagination(callback_query: CallbackQuery, user_data: Tuple[Campus
     *_, user = user_data
     host, page = callback_query.data.split('.')[1:]
     page = int(page)
+    await callback_query.answer(text=Config.local.wait.get(user.language))
     text, peer = await text_compile.host_data_compile(user=user, host=host, page=page)
     keyboard = None
     if peer:
@@ -109,7 +110,6 @@ async def host_pagination(callback_query: CallbackQuery, user_data: Tuple[Campus
         keyboard = peer_keyboard(peers=[peer], friends=friends, observables=observables, payload='pagination')
     keyboard = pagination_keyboard(action='host_pagination', count=1, content=host, limit=0,
                                    stop=3, page=page, keyboard=keyboard)
-    await callback_query.answer()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageNotModified, MessageToEditNotFound):
         await callback_query.message.edit_text(text, reply_markup=keyboard,
