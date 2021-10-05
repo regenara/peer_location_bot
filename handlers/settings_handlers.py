@@ -35,7 +35,7 @@ async def welcome_callback(callback_query: CallbackQuery):
 async def callback_throttler(_: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
     await bot.send_message(user.id, Config.local.antiflood.get(user.language))
-    Config.queue.append(user.id)
+    Config.queue.add(user.id)
 
 
 async def action_settings(callback_query: CallbackQuery, **kwargs):

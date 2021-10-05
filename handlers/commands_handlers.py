@@ -57,7 +57,7 @@ async def settings(message: Message, user_data: Tuple[Campus, Peer, User]):
 async def message_throttler(message: Message, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
     await message.answer(Config.local.antiflood.get(user.language), reply_markup=menu_keyboard(user.language))
-    Config.queue.append(user.id)
+    Config.queue.add(user.id)
 
 
 @dp.message_handler(is_introvert=True, state='granted')
