@@ -144,9 +144,11 @@ async def peers_data(message: Message, user_data: Tuple[Campus, Peer, User]):
         texts.append(text)
     friends = await UserPeer.get_friends(user_id=user.id)
     observables = await UserPeer.get_observables(user_id=user.id)
-    keyboard = peer_keyboard(peers=peers, friends=friends, observables=observables)
     if len(peers) == 1:
+        keyboard = peer_keyboard(peers=peers, friends=friends, observables=observables, payload='alone_peer')
         keyboard = alone_peer_keyboard(user=user, login=peers[0].login, keyboard=keyboard)
+    else:
+        keyboard = peer_keyboard(peers=peers, friends=friends, observables=observables)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
