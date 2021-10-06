@@ -88,6 +88,8 @@ class Peer:
                     if (end_at < datetime.now(timezone.utc)) and cursus['level'] < 16:
                         status = '☠️ '
                     break
+            if login == 'mstoneho':
+                status = '🗿 '
             dignity = ''
             if peer_data['titles']:
                 selected = [title_user['title_id'] for title_user in peer_data['titles_users']
