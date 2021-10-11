@@ -222,7 +222,7 @@ class IntraAPI:
                 'range[final_mark]': '40,150'
             }
             data = await self._request(endpoint, params=params)
-            project_data = [record for record in data if record['validated?']]
+            project_data.extend([record for record in data if record['validated?'] and record not in project_data])
             weeks *= 3
         return weeks_count, project_data
 
