@@ -211,6 +211,7 @@ class IntraAPI:
         project_data = []
         weeks = 4
         weeks_count = weeks
+        ids = []
         while len(project_data) < 30 and weeks < 37:
             weeks_count = weeks
             now = datetime.now(timezone(time_zone))
@@ -222,9 +223,16 @@ class IntraAPI:
                 'range[final_mark]': '40,150'
             }
             data = await self._request(endpoint, params=params)
-            project_data.extend([record for record in data if record['validated?'] and record not in project_data])
+            [[project_data.append(record), ids.append(record['id'])] for record in data
+             if record['validated?'] and record not in project_data]
             weeks *= 3
-        return weeks_count, project_data
+        projects = []
+        ids = list(set(ids))
+        for project in project_data:
+            if project['id'] in ids:
+                projects.append(project)
+                ids.remove(project['id'])
+        return weeks_count, projects
 
     @cache(ttl=300)
     async def get_campus_locations(self, campus_id: int,
