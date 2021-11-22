@@ -343,8 +343,7 @@ class TextCompile:
         peer = await self._get_peer(user=user, login=login)
         if isinstance(peer, str):
             return peer, False
-        courses = {cursus['cursus']['id']: cursus['cursus']['name'] for cursus in peer.cursus_data}
-        projects = Project().from_list(projects_data=peer.projects_users, courses=courses)
+        projects = Project().from_list(projects_data=peer.projects_users, cursus_data=peer.cursus_data)
         texts = []
         for cursus in projects:
             projects_data = []

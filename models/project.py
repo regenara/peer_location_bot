@@ -56,7 +56,9 @@ class Project:
                 projects.setdefault(cursus, []).append(project)
         return projects
 
-    def from_list(self, projects_data: List[Dict[str, Any]], courses: Dict[int, Any]) -> Dict[str, List['Project']]:
+    def from_list(self, projects_data: List[Dict[str, Any]],
+                  cursus_data: List[Dict[str, Any]]) -> Dict[str, List['Project']]:
+        courses = {cursus['cursus']['id']: cursus['cursus']['name'] for cursus in cursus_data}
         projects_data = [self._from_dict(data=project) for project in projects_data]
         return self._compile_projects(projects_data=projects_data, courses=courses)
 
