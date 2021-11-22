@@ -189,14 +189,16 @@
    },
    "alone_peer_menu":{
       "ru":{
-         "last_locations":"Последние локации \uD83D\uDCBA",
+         "last_locations":"Локации \uD83D\uDCBA",
          "feedbacks":"Проверки \uD83D\uDCDD",
-         "time_statistics":"Статистика по времени ⏱"
+         "peer_projects": "Проекты \uD83D\uDCD5",
+         "time_statistics":"Статистика ⏱"
       },
       "en":{
-         "last_locations":"Last places \uD83D\uDCBA",
+         "last_locations":"Locations \uD83D\uDCBA",
          "feedbacks":"Evaluations \uD83D\uDCDD",
-         "time_statistics":"Time statistics ⏱"
+         "peer_projects": "Projects \uD83D\uDCD5",
+         "time_statistics":"Statistics ⏱"
       }
    },
    "host":{

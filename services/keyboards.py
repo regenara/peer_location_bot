@@ -86,7 +86,7 @@ def peer_keyboard(peers: List[Peer], friends: List[PeerDB], observables: List[Pe
 
 def alone_peer_keyboard(user: User, login: str, keyboard: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
     for k, v in Config.local.alone_peer_menu.get(user.language).items():
-        keyboard.row(InlineKeyboardButton(text=v, callback_data=f'{k}.{login}'))
+        keyboard.insert(InlineKeyboardButton(text=v, callback_data=f'{k}.{login}'))
     return keyboard
 
 

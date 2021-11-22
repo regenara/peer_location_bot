@@ -287,3 +287,10 @@ async def peer_feedbacks(callback_query: CallbackQuery, user_data: Tuple[Campus,
                                        method=text_compile.peer_feedbacks_compile,
                                        action='feedbacks_pagination', limit=5, stop=9)
     await callback_query.message.answer(text, disable_web_page_preview=True, reply_markup=keyboard)
+
+
+@dp.callback_query_handler(text_startswith='peer_projects', state='granted')
+async def peer_projects(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    text, keyboard = await action_peer(user=user_data[-1], callback_query=callback_query,
+                                       method=text_compile.peer_projects_compile)
+    await callback_query.message.answer(text, reply_markup=keyboard)
