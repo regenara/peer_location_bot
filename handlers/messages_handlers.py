@@ -85,6 +85,12 @@ async def peer_feedbacks(message: Message, user_data: Tuple[Campus, Peer, User])
     await message.answer(text, disable_web_page_preview=True, reply_markup=keyboard)
 
 
+@dp.message_handler(lambda message: message.text.startswith('*') and len(message.text) > 2, state='granted')
+async def peer_projects(message: Message, user_data: Tuple[Campus, Peer, User]):
+    text, keyboard = await action_peer(user=user_data[-1], message=message, method=text_compile.peer_projects_compile)
+    await message.answer(text, reply_markup=keyboard)
+
+
 @dp.message_handler(lambda message: message.text.startswith('#') and len(message.text) > 2, state='granted')
 async def host_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)

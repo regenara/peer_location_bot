@@ -2,7 +2,9 @@ from dataclasses import (dataclass,
                          field)
 from datetime import (datetime,
                       timezone)
-from typing import (List,
+from typing import (Any,
+                    Dict,
+                    List,
                     Tuple)
 
 from config import Config
@@ -19,7 +21,7 @@ class Peer:
     pool_month: str = ''
     pool_year: str = ''
     coalition: str = ''
-    cursus_data: List[dict] = field(default_factory=list)
+    cursus_data: List[Dict[str, Any]] = field(default_factory=list)
     campus: str = ''
     campus_id: int = 0
     time_zone: str = ''
@@ -32,6 +34,7 @@ class Peer:
     is_staff: bool = False
     dignity: str = ''
     username: str = ''
+    projects_users: List[Dict[str, Any]] = field(default_factory=list)
 
     @staticmethod
     async def _get_coalition(login: str) -> str:
@@ -102,9 +105,10 @@ class Peer:
                     await self._get_extended_data(login=login, peer_id=id, location=location, status=status)
             if is_staff:
                 status = '😎 '
+            projects_users = sorted(peer_data['projects_users'], key=lambda project: project['id'], reverse=True)
             await Savers.get_peer(peer_id=id, login=login, campus_id=campus_id)
             return Peer(id=id, login=login, full_name=full_name, pool_month=pool_month, pool_year=pool_year,
                         coalition=coalition, cursus_data=cursus_data, campus=campus, campus_id=campus_id,
                         time_zone=time_zone, location=location, last_location=last_location, avatar=avatar, link=link,
                         status=status, last_seen_time=last_seen_time, is_staff=is_staff, dignity=dignity,
-                        username=username)
+                        username=username, projects_users=projects_users)

@@ -20,6 +20,7 @@ from db_models.users import User
 from models.feedback import Feedback
 from models.host import Host
 from models.peer import Peer
+from models.project import Project
 from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
                              NotFoundIntraError)
@@ -100,6 +101,17 @@ class TextCompile:
         url = f'https://profile.intra.42.fr/users/{login}'
         return self._get_peer_title(status=status, url=url, full_name=full_name, login=login)
 
+    async def _get_peer(self, user: User, login: str) -> Union[Peer, str]:
+        is_wrong = self._is_wrong_name(name=login)
+        if is_wrong:
+            return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt"))
+        try:
+            return await Peer().get_peer(login=login)
+        except UnknownIntraError as e:
+            return f'{hbold(login, ":", sep="")} {e}'
+        except NotFoundIntraError:
+            return Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
+
     @staticmethod
     def _is_wrong_name(name: str) -> str:
         if len(name) > 20:
@@ -108,16 +120,9 @@ class TextCompile:
             return name
 
     async def peer_data_compile(self, user: User, login: str, is_single: bool) -> Tuple[Union[Peer, None], str]:
-        is_wrong = self._is_wrong_name(name=login)
-        if is_wrong:
-            return None, Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt"))
-        try:
-            peer = await Peer().get_peer(login=login)
-        except UnknownIntraError as e:
-            return None, f'{hbold(login, ":", sep="")} {e}'
-        except NotFoundIntraError:
-            return None, Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
-
+        peer = await self._get_peer(user=user, login=login)
+        if isinstance(peer, str):
+            return None, peer
         courses = '\n'.join(
             [f'{hbold(c["cursus"]["name"], ":", sep="")} {round(c["level"], 2)}' for c in peer.cursus_data]
         )
@@ -333,6 +338,30 @@ class TextCompile:
             text = f'{hlink(title=login, url=url)}  |  {project["final_mark"]}  |  {marked_at}'
             texts.append(text)
         return title + '\n'.join(texts)
+
+    async def peer_projects_compile(self, user: User, login: str) -> Tuple[str, bool]:
+        peer = await self._get_peer(user=user, login=login)
+        if isinstance(peer, str):
+            return peer, False
+        projects = Project().from_list(projects_data=peer.projects_users, cursus_data=peer.cursus_data)
+        texts = []
+        for cursus in projects:
+            projects_data = []
+            for parent in projects[cursus]:
+                children = []
+                for child in parent.children:
+                    children.append(
+                        f'\n  |— {child.status} {child.name} '
+                        f'{f" [{child.final_mark}]" if child.final_mark is not None else ""}'
+                    )
+                projects_data.append(
+                    f'{parent.status} {parent.name} '
+                    f'{f" [{parent.final_mark}]" if parent.final_mark is not None else ""}{"".join(children)}'
+                )
+            text = '\n'.join(projects_data)
+            texts.append(f'{hbold(cursus)}\n{text}')
+        title = self._get_peer_title(status=peer.status, url=peer.link, full_name=peer.full_name, login=peer.login)
+        return title + '\n\n'.join(texts), True
 
     async def time_peers_compile(self, user: User, login: str) -> Tuple[str, bool]:
         is_wrong = self._is_wrong_name(name=login)
