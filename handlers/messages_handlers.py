@@ -4,6 +4,7 @@ from typing import (Callable,
 
 from aiogram.types import (InlineKeyboardMarkup,
                            Message)
+from aiogram.utils.parts import safe_split_text
 from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageToDeleteNotFound,
                                       MessageNotModified,
@@ -88,7 +89,13 @@ async def peer_feedbacks(message: Message, user_data: Tuple[Campus, Peer, User])
 @dp.message_handler(lambda message: message.text.startswith('*') and len(message.text) > 2, state='granted')
 async def peer_projects(message: Message, user_data: Tuple[Campus, Peer, User]):
     text, keyboard = await action_peer(user=user_data[-1], message=message, method=text_compile.peer_projects_compile)
-    await message.answer(text, reply_markup=keyboard)
+    if len(text) < 4096:
+        await message.answer(text, reply_markup=keyboard)
+    else:
+        texts = safe_split_text(text=text, split_separator='\n\n')
+        for text in texts[:-1]:
+            await message.answer(text)
+        await message.answer(texts[-1], reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: message.text.startswith('#') and len(message.text) > 2, state='granted')

@@ -8,7 +8,8 @@ from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageNotModified,
                                       MessageToEditNotFound,
                                       MessageToDeleteNotFound)
-from aiogram.utils.parts import paginate
+from aiogram.utils.parts import (paginate,
+                                 safe_split_text)
 from asyncpg.exceptions import UniqueViolationError
 
 from bot import (bot,
@@ -295,7 +296,13 @@ async def peer_feedbacks(callback_query: CallbackQuery, user_data: Tuple[Campus,
 async def peer_projects(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     text, keyboard = await action_peer(user=user_data[-1], callback_query=callback_query,
                                        method=text_compile.peer_projects_compile)
-    await callback_query.message.answer(text, reply_markup=keyboard)
+    if len(text) < 4096:
+        await callback_query.message.answer(text, reply_markup=keyboard)
+    else:
+        texts = safe_split_text(text=text, split_separator='\n\n')
+        for text in texts[:-1]:
+            await callback_query.message.answer(text)
+        await callback_query.message.answer(texts[-1], reply_markup=keyboard)
 
 
 @dp.callback_query_handler(text_startswith='events_campuses', state='granted')
