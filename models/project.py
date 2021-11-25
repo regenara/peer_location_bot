@@ -42,7 +42,8 @@ class Project:
             'finished': '❌',
             'in_progress': '📝',
             'waiting_for_correction': '⏳',
-            'searching_a_group': '🕵️‍♂️'
+            'searching_a_group': '🕵️‍♂️',
+            'creating_group': '👥'
         }
         for project in projects_data:
             cursus = project.cursus_ids[0]
