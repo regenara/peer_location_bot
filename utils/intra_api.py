@@ -204,6 +204,25 @@ class IntraAPI:
         endpoint = f'projects/{project_id}'
         return await self._request(endpoint)
 
+    @cache(ttl=300)
+    async def get_events(self, campus_id: int, cursus_id: int) -> List[Dict[str, Any]]:
+        endpoint = f'campus/{campus_id}/cursus/{cursus_id}/events'
+        params = {'filter[future]': 'true'}
+        return await self._request(endpoint, params=params)
+
+    @cache(ttl=300)
+    async def get_exams(self, campus_id: int, cursus_id: int) -> List[Dict[str, Any]]:
+        endpoint = f'campus/{campus_id}/cursus/{cursus_id}/exams'
+        data = await self._request(endpoint)
+        exams_data = []
+        exams_ids = []
+        for exam in data:
+            if (datetime.fromisoformat(exam['begin_at'].replace('Z', '+00:00')) > datetime.now(tz=timezone('UTC'))) \
+                    and exam['id'] not in exams_ids:
+                exams_data.append(exam)
+                exams_ids.append(exam['id'])
+        return exams_data
+
     @cache(ttl=3600)
     async def get_project_peers(self, project_id: int, campus_id: int,
                                 time_zone: str) -> Tuple[int, List[Dict[str, Any]]]:
@@ -288,6 +307,8 @@ class IntraAPI:
             data = await self._request(endpoint, params=params)
             for project in data:
                 if project['name'] in project_names:
+                    if project['parent']:
+                        project['name'] = f"{project['parent']}: {project['name']}"
                     projects.append(project)
             start += 100
             stop += 100

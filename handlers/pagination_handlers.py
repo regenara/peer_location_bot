@@ -116,7 +116,8 @@ async def host_pagination(callback_query: CallbackQuery, user_data: Tuple[Campus
                                                disable_web_page_preview=not user.show_avatar)
 
 
-@dp.callback_query_handler(text_startswith=('courses_campuses_pagination', 'locations_campuses_pagination'),
+@dp.callback_query_handler(text_startswith=('courses_campuses_pagination', 'locations_campuses_pagination',
+                                            'events_campuses_pagination'),
                            state='granted')
 async def campuses_pagination(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
@@ -174,3 +175,21 @@ async def friends_pagination(callback_query: CallbackQuery, user_data: Tuple[Cam
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     await bot.send_message(user.id, text, reply_markup=keyboard,
                            disable_web_page_preview=not (friends_count == 1 and user.show_avatar))
+
+
+@dp.callback_query_handler(text_startswith='events_pagination', state='granted')
+async def events_pagination(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
+    _, peer, user = user_data
+    campus_id, page = map(int, callback_query.data.split('.')[1:])
+    await callback_query.answer(text=Config.local.wait.get(user.language))
+    text, count, page = await text_compile.events_text_compile(user=user, campus_id=campus_id,
+                                                               cursus_id=peer.cursus_id, page=page)
+    back_button_data = None
+    if not user.use_default_campus:
+        back_button_data = (Config.local.back.get(user.language), 'back.events')
+    keyboard = pagination_keyboard(action='events_pagination', count=count, content=campus_id, limit=1,
+                                   stop=9, page=page, back_button_data=back_button_data)
+    await dp.current_state(user=user.id).set_state(States.GRANTED)
+    with suppress(MessageNotModified, MessageToEditNotFound):
+        await callback_query.message.edit_text(text, reply_markup=keyboard, disable_web_page_preview=True)

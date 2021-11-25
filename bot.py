@@ -17,7 +17,7 @@ from services.filters import (IsIntrovert,
                               IsUpdateProjects,
                               IsBackToCourses,
                               IsBackToCampusesFromCourses,
-                              IsBackToCampusesFromLocations)
+                              IsBackToCampuses)
 from sub_apps.web_server import WebServer
 
 for custom_filter in (IsIntrovert,
@@ -27,7 +27,7 @@ for custom_filter in (IsIntrovert,
                       IsUpdateProjects,
                       IsBackToCourses,
                       IsBackToCampusesFromCourses,
-                      IsBackToCampusesFromLocations):
+                      IsBackToCampuses):
     dp.filters_factory.bind(custom_filter)
 
 

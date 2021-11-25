@@ -80,3 +80,9 @@ async def telegram_settings(callback_query: CallbackQuery):
 async def campus_settings(callback_query: CallbackQuery):
     use_default_campus = callback_query.data == 'yes_campus'
     await action_settings(callback_query=callback_query, use_default_campus=use_default_campus)
+
+
+@dp.callback_query_handler(text=['yes_notify', 'no_notify'], state='granted')
+async def notify_settings(callback_query: CallbackQuery):
+    notify = callback_query.data == 'yes_notify'
+    await action_settings(callback_query=callback_query, notify=notify)

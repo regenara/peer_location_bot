@@ -11,6 +11,7 @@ class Peer(db.Model, TimeMixin):
     login = db.Column(db.String(50), nullable=False, unique=True)
     campus_id = db.Column(db.ForeignKey('campuses.id', ondelete='SET NULL'), nullable=True)
     user_id = db.Column(db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    cursus_id = db.Column(db.Integer(), nullable=True)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.to_dict()})'
@@ -20,7 +21,8 @@ class Peer(db.Model, TimeMixin):
             'id': self.id,
             'login': self.login,
             'campus_id': self.campus_id,
-            'user_id': self.user_id
+            'user_id': self.user_id,
+            'cursus_id': self.cursus_id
         }
 
     @classmethod
@@ -37,8 +39,9 @@ class Peer(db.Model, TimeMixin):
 
     @classmethod
     @del_cache(keys=['Peer.get_peer'])
-    async def create_peer(cls, peer_id: int, login: str, campus_id: int = None, user_id: int = None) -> 'Peer':
-        return await cls.create(id=peer_id, login=login, campus_id=campus_id, user_id=user_id)
+    async def create_peer(cls, peer_id: int, login: str, cursus_id: int, campus_id: int = None,
+                          user_id: int = None) -> 'Peer':
+        return await cls.create(id=peer_id, login=login, cursus_id=cursus_id, campus_id=campus_id, user_id=user_id)
 
     @classmethod
     @del_cache(keys=['Peer.get_peer'])

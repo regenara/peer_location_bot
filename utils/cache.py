@@ -67,7 +67,7 @@ def cache(ttl: int = None, serialization: bool = False, deserialization: bool = 
             cls = args[0]
             key = Cache.get_key(func=func, **kwargs)
             value = await Cache().get(key=key)
-            if not value:
+            if value is None:
                 value = await func(cls, **kwargs)
                 save_data = value
                 if serialization:

@@ -5,12 +5,31 @@ from datetime import (datetime,
 from typing import (Any,
                     Dict,
                     List,
-                    Tuple)
+                    Tuple,
+                    Optional)
 
 from config import Config
 from db_models.users import User
 from models.host import Host
 from utils.savers import Savers
+
+
+@dataclass
+class Cursus:
+    id: int = 0
+    cursus_id: int = 0
+    name: str = ''
+    level: float = 0.0
+    end_at: Optional[datetime] = None
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> 'Cursus':
+        id = data['id']
+        cursus_id = data['cursus']['id']
+        name = data['cursus']['name']
+        level = round(data['level'], 2)
+        end_at = datetime.fromisoformat(data['end_at'].replace('Z', '+00:00')) if data['end_at'] else None
+        return Cursus(id=id, cursus_id=cursus_id, name=name, level=level, end_at=end_at)
 
 
 @dataclass
@@ -21,7 +40,8 @@ class Peer:
     pool_month: str = ''
     pool_year: str = ''
     coalition: str = ''
-    cursus_data: List[Dict[str, Any]] = field(default_factory=list)
+    cursus_data: List[Cursus] = field(default_factory=list)
+    cursus: Optional[Cursus] = None
     campus: str = ''
     campus_id: int = 0
     time_zone: str = ''
@@ -74,7 +94,9 @@ class Peer:
             login = peer_data['login']
             pool_month = peer_data.get('pool_month')
             pool_year = peer_data.get('pool_year')
-            cursus_data = peer_data['cursus_users']
+            cursus_data = sorted([Cursus.from_dict(data=cursus) for cursus in peer_data['cursus_users']],
+                                 key=lambda cursus: cursus.id)
+            cursus = cursus_data[-1] if cursus_data else None
             campus_id = [campus['campus_id'] for campus in peer_data['campus_users'] if campus['is_primary']][0]
             campus, time_zone = [(campus['name'], campus['time_zone'])
                                  for campus in peer_data['campus'] if campus['id'] == campus_id][0]
@@ -85,12 +107,9 @@ class Peer:
             status = '🟢 '
             if not location:
                 status = '🔴 '
-            for cursus in cursus_data:
-                if cursus['cursus']['id'] == Config.cursus_id and cursus['end_at']:
-                    end_at = datetime.fromisoformat(cursus['end_at'].replace('Z', '+00:00'))
-                    if (end_at < datetime.now(timezone.utc)) and cursus['level'] < 16:
-                        status = '☠️ '
-                    break
+            if cursus and (cursus.id == Config.cursus_id) and cursus.end_at and \
+                    (cursus.end_at < datetime.now(timezone.utc)) and (cursus.level < 16):
+                status = '☠️ '
             if login == 'mstoneho':
                 status = '🗿 '
             dignity = ''
@@ -106,9 +125,9 @@ class Peer:
             if is_staff:
                 status = '😎 '
             projects_users = sorted(peer_data['projects_users'], key=lambda project: project['id'], reverse=True)
-            await Savers.get_peer(peer_id=id, login=login, campus_id=campus_id)
+            await Savers.get_peer(peer_id=id, login=login, cursus_id=cursus.cursus_id, campus_id=campus_id)
             return Peer(id=id, login=login, full_name=full_name, pool_month=pool_month, pool_year=pool_year,
-                        coalition=coalition, cursus_data=cursus_data, campus=campus, campus_id=campus_id,
-                        time_zone=time_zone, location=location, last_location=last_location, avatar=avatar, link=link,
-                        status=status, last_seen_time=last_seen_time, is_staff=is_staff, dignity=dignity,
-                        username=username, projects_users=projects_users)
+                        coalition=coalition, cursus_data=cursus_data, cursus=cursus, campus=campus,
+                        campus_id=campus_id, time_zone=time_zone, location=location, last_location=last_location,
+                        avatar=avatar, link=link, status=status, last_seen_time=last_seen_time, is_staff=is_staff,
+                        dignity=dignity, username=username, projects_users=projects_users)

@@ -4,6 +4,8 @@ from typing import (Any,
                     Dict,
                     List)
 
+from .peer import Cursus
+
 
 @dataclass
 class Project:
@@ -17,7 +19,7 @@ class Project:
     children: List['Project'] = field(default_factory=list)
 
     @staticmethod
-    def _from_dict(data: Dict[str, Any]) -> 'Project':
+    def from_dict(data: Dict[str, Any]) -> 'Project':
         final_mark = data['final_mark']
         status = data['status']
         validated = data['validated?']
@@ -56,9 +58,7 @@ class Project:
                 projects.setdefault(cursus, []).append(project)
         return projects
 
-    def from_list(self, projects_data: List[Dict[str, Any]],
-                  cursus_data: List[Dict[str, Any]]) -> Dict[str, List['Project']]:
-        courses = {cursus['cursus']['id']: cursus['cursus']['name'] for cursus in cursus_data}
-        projects_data = [self._from_dict(data=project) for project in projects_data]
+    def from_list(self, projects_data: List[Dict[str, Any]], cursus_data: List[Cursus]) -> Dict[str, List['Project']]:
+        courses = {cursus.cursus_id: cursus.name for cursus in cursus_data}
+        projects_data = [self.from_dict(data=project) for project in projects_data]
         return self._compile_projects(projects_data=projects_data, courses=courses)
-

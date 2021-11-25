@@ -4,6 +4,7 @@ from typing import (Any,
                     List)
 
 import asyncpg.exceptions
+from sqlalchemy.sql import expression
 
 from utils.cache import (Cache,
                          cache,
@@ -17,6 +18,7 @@ class Project(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     cursus_id = db.Column(db.Integer(), nullable=True)
+    from_intra = db.Column(db.Boolean(), nullable=False, server_default=expression.false())
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.to_dict()})'
@@ -25,7 +27,8 @@ class Project(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'cursus_id': self.cursus_id
+            'cursus_id': self.cursus_id,
+            'from_intra': self.from_intra
         }
 
     @classmethod
@@ -43,14 +46,15 @@ class Project(db.Model):
     @classmethod
     @cache(serialization=True, deserialization=True)
     async def get_projects(cls, cursus_id: int) -> List['Project']:
-        return await cls.query.where(cls.cursus_id == cursus_id).order_by(cls.name).gino.all()
+        return await cls.query.where(
+            (cls.cursus_id == cursus_id) & (cls.from_intra.is_(True))).order_by(cls.name).gino.all()
 
     @classmethod
     @del_cache(keys=['Project.get_project'])
-    async def create_project(cls, project_id: int, name: str, cursus_id: int) -> 'Project':
+    async def create_project(cls, project_id: int, name: str, cursus_id: int, from_intra: bool = False) -> 'Project':
         await Cache().delete(key=f'Project.get_projects:{cursus_id}')
         with suppress(asyncpg.exceptions.UniqueViolationError):
-            return await cls.create(id=project_id, name=name, cursus_id=cursus_id)
+            return await cls.create(id=project_id, name=name, cursus_id=cursus_id, from_intra=from_intra)
 
     @classmethod
     @del_cache(keys=['Project.get_projects'])

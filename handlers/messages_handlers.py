@@ -56,7 +56,7 @@ async def action_peer(user: User, message: Message, method: Callable, action: st
 async def peer_data_from_username(message: Message, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
     username_or_user_id = message.text[1:].lower().strip()
-    login = await User.get_login(username_or_user_id=username_or_user_id)
+    login = await User.get_login(username_or_user_id=username_or_user_id, is_admin=user.id == Config.admin)
     if not login:
         await message.answer(Config.local.not_found_username.get(user.language,
                                                                  username=username_or_user_id.replace("<", "&lt")))

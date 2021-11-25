@@ -54,9 +54,10 @@ async def settings(message: Message, user_data: Tuple[Campus, Peer, User]):
 
 
 @dp.message_handler(state='throttler')
-async def message_throttler(message: Message, user_data: Tuple[Campus, Peer, User]):
+async def message_throttler(_: Message, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
-    await message.answer(Config.local.antiflood.get(user.language), reply_markup=menu_keyboard(user.language))
+    await bot.send_message(user.id, Config.local.antiflood.get(user.language),
+                           reply_markup=menu_keyboard(user.language))
     Config.queue.add(user.id)
 
 
@@ -153,3 +154,25 @@ async def donate(message: Message, user_data: Tuple[Campus, Peer, User]):
     *_, user = user_data
     text = await text_compile.donate_text_compile(user=user)
     await message.answer(text, reply_markup=donate_keyboard(user.language))
+
+
+@dp.message_handler(lambda message: message.text in ('/events', Config.local.events.ru, Config.local.events.en),
+                    state='*')
+async def events(message: Message, user_data: Tuple[Campus, Peer, User]):
+    await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)
+    campus, peer, user = user_data
+    if user.use_default_campus:
+        message = await message.answer(Config.local.wait.get(user.language))
+        await message.bot.send_chat_action(user.id, 'typing')
+        text, count, _ = await text_compile.events_text_compile(user=user, campus_id=campus.id,
+                                                                cursus_id=peer.cursus_id)
+        keyboard = pagination_keyboard(action='events_pagination', count=count,
+                                       content=peer.campus_id, limit=1, stop=9)
+        with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
+            await message.delete()
+        await bot.send_message(user.id, text, reply_markup=keyboard, disable_web_page_preview=True)
+    else:
+        campuses = await Campus.get_campuses()
+        keyboard = data_keyboard(data=campuses, action='events_campuses', content='locations', limit=30)
+        await message.answer(Config.local.campus_choose.get(user.language), reply_markup=keyboard)
+    await dp.current_state(user=user.id).set_state(States.GRANTED)

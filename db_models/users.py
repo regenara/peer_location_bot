@@ -27,6 +27,7 @@ class User(db.Model, TimeMixin):
     show_avatar = db.Column(db.Boolean(), nullable=False, server_default=expression.false())
     show_me = db.Column(db.Boolean(), nullable=False, server_default=expression.false())
     use_default_campus = db.Column(db.Boolean(), nullable=False, server_default=expression.true())
+    notify = db.Column(db.Boolean(), nullable=False, server_default=expression.true())
     language = db.Column(db.Enum(Languages), nullable=False, server_default=Languages.en.name)
 
     def __repr__(self):
@@ -39,6 +40,7 @@ class User(db.Model, TimeMixin):
             'show_avatar': self.show_avatar,
             'show_me': self.show_me,
             'use_default_campus': self.use_default_campus,
+            'notify': self.notify,
             'language': self.language.value if hasattr(self.language, 'value') else self.language
         }
 
@@ -55,13 +57,14 @@ class User(db.Model, TimeMixin):
         return await cls.query.select_from(Peer.join(User)).where(Peer.id == peer_id).gino.first()
 
     @classmethod
-    async def get_login(cls, username_or_user_id: str) -> str:
+    async def get_login(cls, username_or_user_id: str, is_admin: bool) -> str:
         if username_or_user_id.isdigit():
             where = (cls.id == int(username_or_user_id))
         else:
             where = (db.func.lower(cls.username) == username_or_user_id)
-        return await Peer.query.select_from(Peer.join(cls)).where(
-            where & (cls.show_me.is_(True))).gino.load(Peer.login).first()
+        if not is_admin:
+            where = where & (cls.show_me.is_(True))
+        return await Peer.query.select_from(Peer.join(cls)).where(where).gino.load(Peer.login).first()
 
     @classmethod
     @cache(serialization=True, is_user_data=True)

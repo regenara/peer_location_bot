@@ -90,12 +90,12 @@ class IsBackToCampusesFromCourses(BoundFilter):
         return len(raws) == 3 and raws[0] == 'back' and raws[1] == 'courses'
 
 
-class IsBackToCampusesFromLocations(BoundFilter):
-    key = 'is_back_to_campuses_from_locations'
+class IsBackToCampuses(BoundFilter):
+    key = 'is_back_to_campuses'
 
-    def __init__(self, is_back_to_campuses_from_locations):
-        self.is_back_to_campuses_from_locations = is_back_to_campuses_from_locations
+    def __init__(self, is_back_to_campuses):
+        self.is_back_to_campuses = is_back_to_campuses
 
     async def check(self, callback_query: CallbackQuery) -> bool:
         raws = callback_query.data.split('.')
-        return len(raws) == 2 and raws[0] == 'back' and raws[1] == 'locations'
+        return len(raws) == 2 and raws[0] == 'back' and raws[1] in ('locations', 'events')
