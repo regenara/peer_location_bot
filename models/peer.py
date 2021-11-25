@@ -41,7 +41,7 @@ class Peer:
     pool_year: str = ''
     coalition: str = ''
     cursus_data: List[Cursus] = field(default_factory=list)
-    cursus: Optional[Cursus] = None
+    cursus_id: Optional[int] = None
     campus: str = ''
     campus_id: int = 0
     time_zone: str = ''
@@ -97,6 +97,7 @@ class Peer:
             cursus_data = sorted([Cursus.from_dict(data=cursus) for cursus in peer_data['cursus_users']],
                                  key=lambda cursus: cursus.id)
             cursus = cursus_data[-1] if cursus_data else None
+            cursus_id = cursus.cursus_id if cursus else None
             campus_id = [campus['campus_id'] for campus in peer_data['campus_users'] if campus['is_primary']][0]
             campus, time_zone = [(campus['name'], campus['time_zone'])
                                  for campus in peer_data['campus'] if campus['id'] == campus_id][0]
@@ -125,9 +126,9 @@ class Peer:
             if is_staff:
                 status = '😎 '
             projects_users = sorted(peer_data['projects_users'], key=lambda project: project['id'], reverse=True)
-            await Savers.get_peer(peer_id=id, login=login, cursus_id=cursus.cursus_id, campus_id=campus_id)
+            await Savers.get_peer(peer_id=id, login=login, cursus_id=cursus_id, campus_id=campus_id)
             return Peer(id=id, login=login, full_name=full_name, pool_month=pool_month, pool_year=pool_year,
-                        coalition=coalition, cursus_data=cursus_data, cursus=cursus, campus=campus,
+                        coalition=coalition, cursus_data=cursus_data, cursus_id=cursus_id, campus=campus,
                         campus_id=campus_id, time_zone=time_zone, location=location, last_location=last_location,
                         avatar=avatar, link=link, status=status, last_seen_time=last_seen_time, is_staff=is_staff,
                         dignity=dignity, username=username, projects_users=projects_users)

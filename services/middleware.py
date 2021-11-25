@@ -19,8 +19,8 @@ class Middleware(BaseMiddleware):
                 await UserDB.update_user(user_id=user.id, username=user.username)
                 updated = True
             peer = await Peer().get_peer(login=user_data[1].login, extended=False)
-            if peer.campus_id != user_data[1].campus_id or peer.cursus.cursus_id != user_data[1].cursus_id:
-                await PeerDB.update_peer(peer_id=peer.id, campus_id=peer.campus_id, cursus_id=peer.cursus.cursus_id)
+            if peer.campus_id != user_data[1].campus_id or peer.cursus_id != user_data[1].cursus_id:
+                await PeerDB.update_peer(peer_id=peer.id, campus_id=peer.campus_id, cursus_id=peer.cursus_id)
                 keys = [f'User.get_user_from_peer:{peer.id}', f'User.get_user_data:{user.id}']
                 [await Cache().delete(key=key) for key in keys]
                 updated = True
