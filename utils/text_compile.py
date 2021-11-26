@@ -16,7 +16,8 @@ from config import Config
 from db_models.campuses import Campus
 from db_models.donate import Donate
 from db_models.peers import Peer as PeerDB
-from db_models.users import User
+from db_models.users import (User,
+                             Languages)
 from models.event import Event
 from models.feedback import Feedback
 from models.host import Host
@@ -442,7 +443,7 @@ class TextCompile:
         title = Config.local.events_title.get(user.language, campus_name=campus.name)
         return title + text, count, page
 
-    def event_compile(self, event: Event, language: str, time_zone: str) -> str:
+    def event_compile(self, event: Event, language: Languages, time_zone: str) -> str:
         duration = self._get_log_time(begin_at_iso=event.begin_at, end_at_iso=event.end_at,
                                       time_zone=time_zone, now=Config.local.now.get(language))
         location = ''

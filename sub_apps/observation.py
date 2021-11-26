@@ -8,7 +8,8 @@ from typing import (Dict,
 
 from db_models import db
 from db_models.peers import Peer
-from db_models.users import User
+from db_models.users import (User,
+                             Languages)
 from db_models.campuses import Campus
 from db_models.users_peers import (Relationship,
                                    UserPeer)
@@ -39,8 +40,9 @@ class Observation:
     async def _get_notifiable(limit: int, offset: int) -> Tuple[int, int, str, List[int]]:
         query = db.select(
             [Peer.campus_id, Peer.cursus_id, Campus.time_zone, db.func.array_agg(User.id)]).select_from(
-            Peer.join(User).join(Campus)).where(User.notify.is_(True)).limit(limit).offset(offset).order_by(
-            Peer.campus_id, Peer.cursus_id)
+            Peer.join(User).join(Campus)).where(
+            (User.notify.is_(True)) & (Peer.cursus_id.isnot(None)) & (Peer.campus_id.isnot(None))
+        ).limit(limit).offset(offset).order_by(Peer.campus_id, Peer.cursus_id)
         return await query.group_by(Peer.campus_id, Peer.cursus_id, Campus.time_zone).gino.first()
 
     async def _mailing_observations(self, user_ids: List[int], login: str, current_location: str):
@@ -55,13 +57,13 @@ class Observation:
             else:
                 self._logger.error('User not found | %s', user_id)
 
-    async def _mailing_events_notify(self, texts: Dict[str, str], user_ids: List[int]):
+    async def _mailing_events_notify(self, texts: Dict[Languages, str], user_ids: List[int]):
         for user_id in user_ids:
             user_data = await User.get_user_data(user_id=user_id)
             self._logger.info('Trying to send event notification | %s ', user_id)
             if user_data:
                 _, peer, user = user_data
-                text = texts[user.language.value if hasattr(user, 'value') else user.language]
+                text = texts[Languages(user.language)]
                 await self._mailing(message=text, user=user, peer_id=peer.id)
             else:
                 self._logger.error('User not found | %s', user_id)
@@ -111,7 +113,7 @@ class Observation:
                 cache_event = await Cache().get(key=f'Event:{event.kind}:{event.id}:{campus_id}.{cursus_id}')
                 if not cache_event:
                     texts = {}
-                    for language in ('ru', 'en'):
+                    for language in (Languages.ru, Languages.en):
                         title = self._local.new_event.get(language)
                         text = text_compile.event_compile(event=event, language=language, time_zone=time_zone)
                         texts.update({language: title + text})
