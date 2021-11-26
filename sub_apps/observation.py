@@ -119,8 +119,9 @@ class Observation:
                         texts.update({language: title + text})
                     await self._mailing_events_notify(texts=texts, user_ids=user_ids)
                     ttl = (datetime.fromisoformat(event.begin_at.replace('Z', '+00:00')) -
-                           datetime.now(tz=timezone.utc)).seconds + 300
-                    await Cache().set(key=f'Event:{event.kind}:{event.id}:{campus_id}.{cursus_id}', value=True, ttl=ttl)
+                           datetime.now(tz=timezone.utc)).total_seconds() + 300
+                    await Cache().set(key=f'Event:{event.kind}:{event.id}:{campus_id}.{cursus_id}',
+                                      value=True, ttl=int(ttl))
                     self._logger.info('Update notify | %s | %s | %s', event.id, event.name, event.kind)
                 else:
                     self._logger.info('Skip notify | %s | %s | %s', event.id, event.name, event.kind)
