@@ -5,6 +5,7 @@ from db_models.peers import Peer
 from db_models.projects import Project
 from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
+                             TimeoutIntraError,
                              NotFoundIntraError)
 
 
@@ -52,7 +53,7 @@ class Savers:
         if not project:
             try:
                 project_data = await Config.intra.get_project(project_id=project_id)
-            except (UnknownIntraError, NotFoundIntraError):
+            except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError):
                 return Project(id=project_id, name=f'Project id{project_id}')
             name = f'Project id{project_id}' if not project_gitlab_path else project_gitlab_path.split('/')[-1]
             if project_data:

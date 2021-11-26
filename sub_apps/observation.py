@@ -16,6 +16,7 @@ from models.event import Event
 from models.localization import Localization
 from utils.intra_api import (IntraAPI,
                              NotFoundIntraError,
+                             TimeoutIntraError,
                              UnknownIntraError)
 from utils.cache import Cache
 
@@ -71,7 +72,7 @@ class Observation:
                 self._logger.info('Start observation process | %s', login)
                 try:
                     peer = await self._intra.get_peer(login=login)
-                except (NotFoundIntraError, UnknownIntraError) as e:
+                except (NotFoundIntraError, TimeoutIntraError, UnknownIntraError) as e:
                     self._logger.error('Error response | %s | %s | continue next', login, e)
                     continue
                 if peer:
@@ -101,7 +102,7 @@ class Observation:
                 events_data = await self._intra.get_events(campus_id=campus_id, cursus_id=cursus_id)
                 exams_data = await self._intra.get_exams(campus_id=campus_id, cursus_id=cursus_id)
                 events_data.extend(exams_data)
-            except (NotFoundIntraError, UnknownIntraError) as e:
+            except (NotFoundIntraError, TimeoutIntraError, UnknownIntraError) as e:
                 self._logger.error('Error response | campus=%s | cursus=%s| %s | return', campus_id, cursus_id, e)
                 return
             events = sorted(Event().from_list(events_data=events_data), key=lambda event: event.begin_at)

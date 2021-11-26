@@ -39,7 +39,7 @@ async def on_startup(app):
     if webhook.url != webhook_url:
         if not webhook.url:
             await bot.delete_webhook()
-        await bot.set_webhook(webhook_url)
+        await bot.set_webhook(webhook_url, drop_pending_updates=True)
 
 
 async def on_shutdown(app):

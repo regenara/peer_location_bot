@@ -24,6 +24,7 @@ from models.peer import Peer
 from models.project import Project
 from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
+                             TimeoutIntraError,
                              NotFoundIntraError)
 from utils.savers import Savers
 
@@ -33,7 +34,7 @@ class TextCompile:
     async def _get_campus(campus_id: int) -> Campus:
         try:
             campus = await Savers.get_campus(campus_id=campus_id)
-        except (UnknownIntraError, NotFoundIntraError):
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError):
             campus = Campus(id=campus_id, name=f'Campus id{campus_id}', time_zone='UTC')
         return campus
 
@@ -108,7 +109,7 @@ class TextCompile:
             return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt"))
         try:
             return await Peer().get_peer(login=login)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}'
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
@@ -186,7 +187,7 @@ class TextCompile:
                                              full_name=peer.full_name, login=peer.login)
             else:
                 title = self._get_title_from_message(message_text=message_text)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}', 0, False
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0, False
@@ -209,7 +210,7 @@ class TextCompile:
             return Config.local.host_not_found.get(user.language, host=is_wrong.replace("<", "&lt")), None
         try:
             location_records = await Host().get_location_history(host=host)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(host, ":", sep="")} {e}', None
         except NotFoundIntraError:
             return Config.local.host_not_found.get(user.language, host=host.replace("<", "&lt")), None
@@ -262,7 +263,7 @@ class TextCompile:
                                              full_name=peer.full_name, login=peer.login)
             else:
                 title = self._get_title_from_message(message_text=message_text)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}', 0, False
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0, False
@@ -289,7 +290,7 @@ class TextCompile:
         try:
             scan, active, inactive = await Config.intra.get_campus_locations(campus_id=campus_id,
                                                                              time_zone=campus.time_zone)
-        except (UnknownIntraError, NotFoundIntraError) as e:
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError) as e:
             return f'{hbold(campus.name, ":", sep="")} {e}', 0, 0
         locations = {}
         for location in inactive:
@@ -324,7 +325,7 @@ class TextCompile:
         try:
             weeks, project_data = await Config.intra.get_project_peers(project_id=project_id, campus_id=campus_id,
                                                                        time_zone=campus.time_zone)
-        except (UnknownIntraError, NotFoundIntraError) as e:
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError) as e:
             return f'{hbold("Project id", project_id, ":", sep="")} {e}'
         if not project_data:
             project = await Savers.get_project(project_id=project_id)
@@ -379,7 +380,7 @@ class TextCompile:
             peer = await Peer().get_peer(login=login, extended=False)
             title = self._get_peer_title(status=peer.status, url=peer.link,
                                          full_name=peer.full_name, login=peer.login)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}', False
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), False
@@ -424,7 +425,7 @@ class TextCompile:
             events_data = await Config.intra.get_events(campus_id=campus_id, cursus_id=cursus_id)
             exams_data = await Config.intra.get_exams(campus_id=campus_id, cursus_id=cursus_id)
             events_data.extend(exams_data)
-        except (UnknownIntraError, NotFoundIntraError) as e:
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError) as e:
             return f'{hbold(campus.name, ":", sep="")} {e}', 0, 0
         if not events_data:
             return Config.local.no_events.get(user.language, campus_name=campus.name), 0, 0
@@ -515,7 +516,7 @@ class TextCompile:
             return logins, bad_logins
         try:
             peers = await Config.intra.get_peers(logins=logins)
-        except UnknownIntraError:
+        except (UnknownIntraError, TimeoutIntraError):
             return logins, bad_logins
         peer_logins = [peer['login'] for peer in peers]
         for login in logins:

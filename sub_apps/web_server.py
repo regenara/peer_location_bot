@@ -27,7 +27,8 @@ from misc import (dp,
                   bot)
 from utils.cache import (Cache,
                          del_cache)
-from utils.intra_api import UnknownIntraError
+from utils.intra_api import (TimeoutIntraError,
+                             UnknownIntraError)
 from utils.savers import Savers
 
 
@@ -116,7 +117,7 @@ class WebServer:
                                                             code=code)
             try:
                 peer = await Config.intra.get_me(personal_access_token=personal_access_token)
-            except UnknownIntraError as e:
+            except (UnknownIntraError, TimeoutIntraError) as e:
                 self._logger.error('Failed get me | token %s | user_id %s | %s',
                                    personal_access_token, user_id, e)
                 raise web.HTTPInternalServerError

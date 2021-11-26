@@ -157,7 +157,7 @@ async def donate(message: Message, user_data: Tuple[Campus, Peer, User]):
 
 
 @dp.message_handler(lambda message: message.text in ('/events', Config.local.events.ru, Config.local.events.en),
-                    state='*')
+                    state='granted')
 async def events(message: Message, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=message.from_user.id).set_state(States.THROTTLER)
     campus, peer, user = user_data
