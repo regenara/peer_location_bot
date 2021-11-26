@@ -46,6 +46,8 @@ class Project:
             'creating_group': '👥'
         }
         for project in projects_data:
+            if not project.cursus_ids:
+                continue
             cursus = project.cursus_ids[0]
             for cursus_id in project.cursus_ids:
                 cursus = courses.get(cursus_id)
