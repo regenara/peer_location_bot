@@ -1,8 +1,12 @@
+from contextlib import suppress
+
 from aiogram.types import (CallbackQuery,
                            Message,
                            User)
 from aiogram.dispatcher.middlewares import BaseMiddleware
 
+from utils.intra_api import (UnknownIntraError,
+                             TimeoutIntraError)
 from utils.cache import Cache
 
 
@@ -18,12 +22,13 @@ class Middleware(BaseMiddleware):
             if user.username != user_data[-1].username:
                 await UserDB.update_user(user_id=user.id, username=user.username)
                 updated = True
-            peer = await Peer().get_peer(login=user_data[1].login, extended=False)
-            if peer.campus_id != user_data[1].campus_id or peer.cursus_id != user_data[1].cursus_id:
-                await PeerDB.update_peer(peer_id=peer.id, campus_id=peer.campus_id, cursus_id=peer.cursus_id)
-                keys = [f'User.get_user_from_peer:{peer.id}', f'User.get_user_data:{user.id}']
-                [await Cache().delete(key=key) for key in keys]
-                updated = True
+            with suppress(UnknownIntraError, TimeoutIntraError):
+                peer = await Peer().get_peer(login=user_data[1].login, extended=False)
+                if peer.campus_id != user_data[1].campus_id or peer.cursus_id != user_data[1].cursus_id:
+                    await PeerDB.update_peer(peer_id=peer.id, campus_id=peer.campus_id, cursus_id=peer.cursus_id)
+                    keys = [f'User.get_user_from_peer:{peer.id}', f'User.get_user_data:{user.id}']
+                    [await Cache().delete(key=key) for key in keys]
+                    updated = True
             if updated:
                 user_data = await UserDB.get_user_data(user_id=user.id)
 
