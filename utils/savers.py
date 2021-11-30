@@ -5,24 +5,28 @@ from db_models.peers import Peer
 from db_models.projects import Project
 from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
+                             TimeoutIntraError,
                              NotFoundIntraError)
 
 
 class Savers:
     @staticmethod
-    async def get_peer(peer_id: int, login: str, campus_id: int, user_id: int = None) -> Peer:
+    async def get_peer(peer_id: int, login: str, campus_id: int, cursus_id: int, user_id: int = None) -> Peer:
         peer = await Peer.get_peer(peer_id=peer_id)
         updates = {}
         if peer and user_id:
             updates.update({'user_id': user_id})
         if peer and peer.campus_id != campus_id:
             updates.update({'campus_id': campus_id})
+        if peer and peer.cursus_id != cursus_id:
+            updates.update({'cursus_id': cursus_id})
         if updates:
             peer = await Peer.update_peer(peer_id=peer_id, **updates)
             keys = [f'User.get_user_from_peer:{peer_id}', f'User.get_user_data:{user_id}']
             [await Cache().delete(key=key) for key in keys]
         if not peer:
-            peer = await Peer.create_peer(peer_id=peer_id, login=login, campus_id=campus_id, user_id=user_id)
+            peer = await Peer.create_peer(peer_id=peer_id, login=login, cursus_id=cursus_id,
+                                          campus_id=campus_id, user_id=user_id)
         return peer
 
     @staticmethod
@@ -49,7 +53,7 @@ class Savers:
         if not project:
             try:
                 project_data = await Config.intra.get_project(project_id=project_id)
-            except (UnknownIntraError, NotFoundIntraError):
+            except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError):
                 return Project(id=project_id, name=f'Project id{project_id}')
             name = f'Project id{project_id}' if not project_gitlab_path else project_gitlab_path.split('/')[-1]
             if project_data:

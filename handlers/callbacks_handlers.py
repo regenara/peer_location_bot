@@ -8,7 +8,8 @@ from aiogram.utils.exceptions import (MessageCantBeDeleted,
                                       MessageNotModified,
                                       MessageToEditNotFound,
                                       MessageToDeleteNotFound)
-from aiogram.utils.parts import paginate
+from aiogram.utils.parts import (paginate,
+                                 safe_split_text)
 from asyncpg.exceptions import UniqueViolationError
 
 from bot import (bot,
@@ -133,16 +134,18 @@ async def campus_projects(callback_query: CallbackQuery, user_data: Tuple[Campus
     await bot.send_message(user.id, text, reply_markup=keyboard)
 
 
-@dp.callback_query_handler(is_back_to_campuses_from_locations=True, state='granted')
-async def back_to_campuses_from_locations(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+@dp.callback_query_handler(is_back_to_campuses=True, state='granted')
+async def back_to_campuses(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
     *_, user = user_data
     campuses = await Campus.get_campuses()
-    keyboard = data_keyboard(data=campuses, action='locations_campuses', content='locations', limit=30)
+    action = {'back.locations': 'locations_campuses', 'back.events': 'events_campuses'}[callback_query.data]
+    keyboard = data_keyboard(data=campuses, action=action, content='locations', limit=30)
     await callback_query.answer()
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageNotModified, MessageToEditNotFound):
-        await callback_query.message.edit_text(Config.local.campus_choose.get(user.language), reply_markup=keyboard)
+        await callback_query.message.edit_text(Config.local.campus_choose.get(user.language), reply_markup=keyboard,
+                                               disable_web_page_preview=True)
 
 
 @dp.callback_query_handler(text_startswith='campuses', state='granted')
@@ -293,4 +296,30 @@ async def peer_feedbacks(callback_query: CallbackQuery, user_data: Tuple[Campus,
 async def peer_projects(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
     text, keyboard = await action_peer(user=user_data[-1], callback_query=callback_query,
                                        method=text_compile.peer_projects_compile)
-    await callback_query.message.answer(text, reply_markup=keyboard)
+    if len(text) < 4096:
+        await callback_query.message.answer(text, reply_markup=keyboard)
+    else:
+        texts = safe_split_text(text=text, split_separator='\n\n')
+        for text in texts[:-1]:
+            await callback_query.message.answer(text)
+        await callback_query.message.answer(texts[-1], reply_markup=keyboard)
+
+
+@dp.callback_query_handler(text_startswith='events_campuses', state='granted')
+async def campus_events(callback_query: CallbackQuery, user_data: Tuple[Campus, Peer, User]):
+    await dp.current_state(user=callback_query.from_user.id).set_state(States.THROTTLER)
+    _, peer, user = user_data
+    campus_id = int(callback_query.data.split('.')[2])
+    with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
+        await callback_query.message.delete()
+    message = await bot.send_message(user.id, Config.local.wait.get(user.language))
+    await callback_query.message.bot.send_chat_action(user.id, 'typing')
+    text, count, _ = await text_compile.events_text_compile(user=user, campus_id=campus_id, cursus_id=peer.cursus_id)
+    back_button_data = (Config.local.back.get(user.language), 'back.events')
+    keyboard = pagination_keyboard(action='events_pagination', count=count, content=campus_id,
+                                   limit=1, stop=9, back_button_data=back_button_data)
+    await dp.current_state(user=user.id).set_state(States.GRANTED)
+    with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
+        await message.delete()
+    await bot.send_message(user.id, text, reply_markup=keyboard, disable_web_page_preview=True)
+

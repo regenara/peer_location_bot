@@ -61,7 +61,8 @@ class AdminProcesses:
             self._logger.info('Get projects from cursus | %s | %s ', cursus_id, data[cursus_id])
             projects = await self._config.intra.get_projects(cursus_id=cursus_id, project_names=data[cursus_id])
             for project in projects:
-                await Project.create_project(project_id=project['id'], name=project['name'], cursus_id=cursus_id)
+                await Project.create_project(project_id=project['id'], name=project['name'],
+                                             cursus_id=cursus_id, from_intra=True)
                 project_ids.append(project['id'])
                 self._logger.info('Save project | %s | %s | %s', cursus_id, project['id'], project['name'])
             await Project.delete_projects_from_cursus(cursus_id=cursus_id, project_ids=project_ids)
@@ -73,9 +74,9 @@ class AdminProcesses:
             if isinstance(message, Message):
                 await message.copy_to(chat_id=user.id, reply_markup=menu_keyboard(user.language))
             else:
-                await bot.send_message(chat_id=user.id, text=message)
+                await bot.send_message(chat_id=user.id, text=message, disable_web_page_preview=True)
             self._logger.info('Successful message sending | %s [%s] | completed', user.id, user.username)
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
 
         except (BotBlocked, UserDeactivated) as e:
             self._logger.error('Failed message sending | %s [%s] | %s | user deleted',

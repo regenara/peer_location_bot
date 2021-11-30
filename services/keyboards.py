@@ -34,18 +34,21 @@ def donate_keyboard(language: str) -> InlineKeyboardMarkup:
 
 
 def menu_keyboard(language: str) -> ReplyKeyboardMarkup:
-    keyboard = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    for text in Config.local.menu.get(language).values():
-        keyboard.insert(KeyboardButton(text))
+    keyboard = ReplyKeyboardMarkup(row_width=3, resize_keyboard=True)
+    buttons = [KeyboardButton(text) for text in Config.local.menu.get(language).values()]
+    keyboard.row(*buttons[:2])
+    keyboard.row(*buttons[2:4])
+    keyboard.row(*buttons[4:])
     return keyboard
 
 
 def settings_keyboard(user: User) -> InlineKeyboardMarkup:
-    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard = InlineKeyboardMarkup(row_width=2)
     statuses = {True: ('✅', 'no'), False: ('❌', 'yes')}
-    texts = (Config.local.avatar.get, Config.local.default_campus.get, Config.local.anon.get)
-    callbacks = ('avatar', 'campus', 'telegram')
-    settings = (user.show_avatar, user.use_default_campus, user.show_me)
+    texts = (Config.local.avatar.get, Config.local.default_campus.get,
+             Config.local.notify.get, Config.local.anon.get)
+    callbacks = ('avatar', 'campus', 'notify', 'telegram')
+    settings = (user.show_avatar, user.use_default_campus, user.notify, user.show_me)
     buttons = [InlineKeyboardButton(Config.local.language.get(user.language),
                                     callback_data=Config.local.languages.get(user.language))]
     for text, callback, setting in zip(texts, callbacks, settings):

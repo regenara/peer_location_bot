@@ -16,13 +16,16 @@ from config import Config
 from db_models.campuses import Campus
 from db_models.donate import Donate
 from db_models.peers import Peer as PeerDB
-from db_models.users import User
+from db_models.users import (User,
+                             Languages)
+from models.event import Event
 from models.feedback import Feedback
 from models.host import Host
 from models.peer import Peer
 from models.project import Project
 from utils.cache import Cache
 from utils.intra_api import (UnknownIntraError,
+                             TimeoutIntraError,
                              NotFoundIntraError)
 from utils.savers import Savers
 
@@ -32,7 +35,7 @@ class TextCompile:
     async def _get_campus(campus_id: int) -> Campus:
         try:
             campus = await Savers.get_campus(campus_id=campus_id)
-        except (UnknownIntraError, NotFoundIntraError):
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError):
             campus = Campus(id=campus_id, name=f'Campus id{campus_id}', time_zone='UTC')
         return campus
 
@@ -107,7 +110,7 @@ class TextCompile:
             return Config.local.not_found.get(user.language, login=is_wrong.replace("<", "&lt"))
         try:
             return await Peer().get_peer(login=login)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}'
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt"))
@@ -119,13 +122,17 @@ class TextCompile:
         if len(name) < 2 or any(char in './\\#% \n?!' for char in name):
             return name
 
+    @staticmethod
+    def _event_cut(event_text: str) -> str:
+        if len(event_text) > 4096:
+            return event_text[:4000] + '&lt...></i>'
+        return event_text
+
     async def peer_data_compile(self, user: User, login: str, is_single: bool) -> Tuple[Union[Peer, None], str]:
         peer = await self._get_peer(user=user, login=login)
         if isinstance(peer, str):
             return None, peer
-        courses = '\n'.join(
-            [f'{hbold(c["cursus"]["name"], ":", sep="")} {round(c["level"], 2)}' for c in peer.cursus_data]
-        )
+        courses = '\n'.join([f'{hbold(cursus.name, ":", sep="")} {cursus.level}' for cursus in peer.cursus_data])
         coalition = ''
         if peer.coalition:
             coalition = f'{hbold(Config.local.coalition.get(user.language), ":", sep="")} {peer.coalition}\n'
@@ -181,7 +188,7 @@ class TextCompile:
                                              full_name=peer.full_name, login=peer.login)
             else:
                 title = self._get_title_from_message(message_text=message_text)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}', 0, False
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0, False
@@ -204,7 +211,7 @@ class TextCompile:
             return Config.local.host_not_found.get(user.language, host=is_wrong.replace("<", "&lt")), None
         try:
             location_records = await Host().get_location_history(host=host)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(host, ":", sep="")} {e}', None
         except NotFoundIntraError:
             return Config.local.host_not_found.get(user.language, host=host.replace("<", "&lt")), None
@@ -257,7 +264,7 @@ class TextCompile:
                                              full_name=peer.full_name, login=peer.login)
             else:
                 title = self._get_title_from_message(message_text=message_text)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}', 0, False
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), 0, False
@@ -284,7 +291,7 @@ class TextCompile:
         try:
             scan, active, inactive = await Config.intra.get_campus_locations(campus_id=campus_id,
                                                                              time_zone=campus.time_zone)
-        except (UnknownIntraError, NotFoundIntraError) as e:
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError) as e:
             return f'{hbold(campus.name, ":", sep="")} {e}', 0, 0
         locations = {}
         for location in inactive:
@@ -319,7 +326,7 @@ class TextCompile:
         try:
             weeks, project_data = await Config.intra.get_project_peers(project_id=project_id, campus_id=campus_id,
                                                                        time_zone=campus.time_zone)
-        except (UnknownIntraError, NotFoundIntraError) as e:
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError) as e:
             return f'{hbold("Project id", project_id, ":", sep="")} {e}'
         if not project_data:
             project = await Savers.get_project(project_id=project_id)
@@ -343,6 +350,9 @@ class TextCompile:
         peer = await self._get_peer(user=user, login=login)
         if isinstance(peer, str):
             return peer, False
+        title = self._get_peer_title(status=peer.status, url=peer.link, full_name=peer.full_name, login=peer.login)
+        if not peer.projects_users:
+            return Config.local.not_projects.get(user.language, title=title), True
         projects = Project().from_list(projects_data=peer.projects_users, cursus_data=peer.cursus_data)
         texts = []
         for cursus in projects:
@@ -360,7 +370,6 @@ class TextCompile:
                 )
             text = '\n'.join(projects_data)
             texts.append(f'{hbold(cursus)}\n{text}')
-        title = self._get_peer_title(status=peer.status, url=peer.link, full_name=peer.full_name, login=peer.login)
         return title + '\n\n'.join(texts), True
 
     async def time_peers_compile(self, user: User, login: str) -> Tuple[str, bool]:
@@ -372,7 +381,7 @@ class TextCompile:
             peer = await Peer().get_peer(login=login, extended=False)
             title = self._get_peer_title(status=peer.status, url=peer.link,
                                          full_name=peer.full_name, login=peer.login)
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             return f'{hbold(login, ":", sep="")} {e}', False
         except NotFoundIntraError:
             return Config.local.not_found.get(user.language, login=login.replace("<", "&lt")), False
@@ -409,6 +418,44 @@ class TextCompile:
             texts.append(text)
         locations_time = Config.local.locations_time.get(user.language, locations='\n'.join(texts))
         return title + '\n\n'.join((total_time, max_time, locations_time)), True
+
+    async def events_text_compile(self, user: User, campus_id: int, cursus_id: int,
+                                  page: int = 0) -> Tuple[str, int, int]:
+        campus = await self._get_campus(campus_id=campus_id)
+        try:
+            events_data = await Config.intra.get_events(campus_id=campus_id, cursus_id=cursus_id)
+            exams_data = await Config.intra.get_exams(campus_id=campus_id, cursus_id=cursus_id)
+            events_data.extend(exams_data)
+        except (UnknownIntraError, NotFoundIntraError, TimeoutIntraError) as e:
+            return f'{hbold(campus.name, ":", sep="")} {e}', 0, 0
+        if not events_data:
+            return Config.local.no_events.get(user.language, campus_name=campus.name), 0, 0
+        events = sorted(Event().from_list(events_data=events_data),
+                        key=lambda event: self._get_utc(iso_format=event.begin_at))[:10]
+        count = len(events[page:])
+        while True:
+            if (len(events) - 1) < page:
+                page -= 1
+            else:
+                break
+        event = events[page]
+        text = self.event_compile(event=event, language=user.language, time_zone=campus.time_zone)
+        title = Config.local.events_title.get(user.language, campus_name=campus.name)
+        return title + text, count, page
+
+    def event_compile(self, event: Event, language: Languages, time_zone: str) -> str:
+        duration = self._get_log_time(begin_at_iso=event.begin_at, end_at_iso=event.end_at,
+                                      time_zone=time_zone, now=Config.local.now.get(language))
+        location = ''
+        if event.location:
+            location = f'{hbold(Config.local.event_location.get(language), ":", sep="")} {event.location}\n'
+        max_people = f'/{event.max_people}' if event.max_people else ''
+        return self._event_cut(event_text=f'📌 {hcode(duration, f"[{event.kind}]")}\n'
+                                          f'{hbold(event.name)}\n'
+                                          f'{location}'
+                                          f'{hbold(Config.local.event_registered.get(language), ":", sep="")} '
+                                          f'{event.nbr_subscribers}{max_people}\n'
+                                          f'{hitalic(event.description)}')
 
     @staticmethod
     async def donate_text_compile(user: User) -> str:
@@ -470,7 +517,7 @@ class TextCompile:
             return logins, bad_logins
         try:
             peers = await Config.intra.get_peers(logins=logins)
-        except UnknownIntraError:
+        except (UnknownIntraError, TimeoutIntraError):
             return logins, bad_logins
         peer_logins = [peer['login'] for peer in peers]
         for login in logins:

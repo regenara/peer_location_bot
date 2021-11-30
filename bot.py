@@ -17,7 +17,7 @@ from services.filters import (IsIntrovert,
                               IsUpdateProjects,
                               IsBackToCourses,
                               IsBackToCampusesFromCourses,
-                              IsBackToCampusesFromLocations)
+                              IsBackToCampuses)
 from sub_apps.web_server import WebServer
 
 for custom_filter in (IsIntrovert,
@@ -27,7 +27,7 @@ for custom_filter in (IsIntrovert,
                       IsUpdateProjects,
                       IsBackToCourses,
                       IsBackToCampusesFromCourses,
-                      IsBackToCampusesFromLocations):
+                      IsBackToCampuses):
     dp.filters_factory.bind(custom_filter)
 
 
@@ -39,7 +39,7 @@ async def on_startup(app):
     if webhook.url != webhook_url:
         if not webhook.url:
             await bot.delete_webhook()
-        await bot.set_webhook(webhook_url)
+        await bot.set_webhook(webhook_url, drop_pending_updates=True)
 
 
 async def on_shutdown(app):

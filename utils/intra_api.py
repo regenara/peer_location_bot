@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import ssl
 from collections import deque
@@ -14,6 +15,7 @@ from urllib.parse import urljoin
 import certifi
 import ujson
 from aiohttp import (ClientSession,
+                     ClientTimeout,
                      TCPConnector)
 from aiohttp.client_exceptions import ContentTypeError
 from asyncio_throttle import Throttler
@@ -35,6 +37,10 @@ class NotFoundIntraError(IntraAPIError):
     """"""
 
 
+class TimeoutIntraError(IntraAPIError):
+    """"""
+
+
 class IntraAPI:
     def __init__(self, config):
         self._apps: Deque[Dict[str, Any]] = deque()
@@ -46,7 +52,8 @@ class IntraAPI:
 
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         connector = TCPConnector(ssl=ssl_context)
-        self.session: ClientSession = ClientSession(connector=connector, json_serialize=ujson.dumps)
+        timeout: ClientTimeout = ClientTimeout(total=60)
+        self.session: ClientSession = ClientSession(connector=connector, json_serialize=ujson.dumps, timeout=timeout)
         self._throttler = Throttler(rate_limit=20)
 
     async def _request_token(self, params: Dict[str, str]) -> str:
@@ -76,45 +83,50 @@ class IntraAPI:
                 app = self._apps[0]
                 access_token = personal_access_token or app['access_token']
                 params = {**params, 'access_token': access_token}
-                async with self.session.request('GET', url, params=params) as response:
+                try:
+                    async with self.session.request('GET', url, params=params) as response:
 
-                    if response.status == 200:
-                        try:
-                            json_response = await response.json()
-                            self._logger.info('Request=%s %s [%s] | %s | %s | completed',
-                                              attempts, response.reason, response.status, url, access_token)
-                            return json_response
-                        except ContentTypeError as e:
-                            self._logger.error('Request=%s %s [%s] | %s | %s | ContentTypeError %s | continue',
-                                               attempts, response.reason, response.status, url, access_token, e)
+                        if response.status == 200:
+                            try:
+                                json_response = await response.json()
+                                self._logger.info('Request=%s %s [%s] | %s | %s | completed',
+                                                  attempts, response.reason, response.status, url, access_token)
+                                return json_response
+                            except ContentTypeError as e:
+                                self._logger.error('Request=%s %s [%s] | %s | %s | ContentTypeError %s | continue',
+                                                   attempts, response.reason, response.status, url, access_token, e)
+                                continue
+
+                        if response.status == 429 and endpoint == 'me':
+                            self._logger.error('Request=%s %s [%s] | %s | %s | continue',
+                                               attempts, response.reason, response.status, url, access_token)
                             continue
 
-                    if response.status == 429 and endpoint == 'me':
+                        if response.status == 401 and (await response.json()).get(
+                                'message') == 'The access token expired':
+                            self._logger.error('Request=%s %s [%s] | %s | %s | token expired | refresh, reset attempts',
+                                               attempts, response.reason, response.status, url, access_token)
+                            self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
+                                                                                  client_id=app['client_id'],
+                                                                                  client_secret=app['client_secret'])
+                            attempts = 1
+
+                        if response.status == 404:
+                            self._logger.error('Request=%s %s [%s] | %s | %s | raise NotFoundIntraError',
+                                               attempts, response.reason, response.status, url, access_token)
+                            raise NotFoundIntraError(f'Intra response: {response.reason} [{response.status}]')
+
                         self._logger.error('Request=%s %s [%s] | %s | %s | continue',
                                            attempts, response.reason, response.status, url, access_token)
-                        continue
+                        attempts += 1
+                        self._apps.rotate(1)
 
-                    if response.status == 401 and (await response.json()).get('message') == 'The access token expired':
-                        self._logger.error('Request=%s %s [%s] | %s | %s | token expired | refresh, reset attempts',
-                                           attempts, response.reason, response.status, url, access_token)
-                        self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
-                                                                              client_id=app['client_id'],
-                                                                              client_secret=app['client_secret'])
-                        attempts = 1
-
-                    if response.status == 404:
-                        self._logger.error('Request=%s %s [%s] | %s | %s | raise NotFoundIntraError',
-                                           attempts, response.reason, response.status, url, access_token)
-                        raise NotFoundIntraError(f'Intra response: {response.reason} [{response.status}]')
-
-                    self._logger.error('Request=%s %s [%s] | %s | %s | continue',
-                                       attempts, response.reason, response.status, url, access_token)
-                    attempts += 1
-                    self._apps.rotate(1)
-
-        self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
-                           attempts - 1, response.reason, response.status, url, access_token)
-        raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
+                    self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
+                                       attempts - 1, response.reason, response.status, url, access_token)
+                    raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
+                except asyncio.exceptions.TimeoutError:
+                    self._logger.error('Request=%s | %s | raise TimeoutIntraError', attempts, url)
+                    raise TimeoutIntraError(f'Intra does not respond for more than 60 seconds')
 
     async def load(self):
         applications = await Application.get_all() if not self._config.test else [await Application.get_test()]
@@ -204,6 +216,25 @@ class IntraAPI:
         endpoint = f'projects/{project_id}'
         return await self._request(endpoint)
 
+    @cache(ttl=300)
+    async def get_events(self, campus_id: int, cursus_id: int) -> List[Dict[str, Any]]:
+        endpoint = f'campus/{campus_id}/cursus/{cursus_id}/events'
+        params = {'filter[future]': 'true'}
+        return await self._request(endpoint, params=params)
+
+    @cache(ttl=300)
+    async def get_exams(self, campus_id: int, cursus_id: int) -> List[Dict[str, Any]]:
+        endpoint = f'campus/{campus_id}/cursus/{cursus_id}/exams'
+        data = await self._request(endpoint)
+        exams_data = []
+        exams_ids = []
+        for exam in data:
+            if (datetime.fromisoformat(exam['begin_at'].replace('Z', '+00:00')) > datetime.now(tz=timezone('UTC'))) \
+                    and exam['id'] not in exams_ids:
+                exams_data.append(exam)
+                exams_ids.append(exam['id'])
+        return exams_data
+
     @cache(ttl=3600)
     async def get_project_peers(self, project_id: int, campus_id: int,
                                 time_zone: str) -> Tuple[int, List[Dict[str, Any]]]:
@@ -288,6 +319,8 @@ class IntraAPI:
             data = await self._request(endpoint, params=params)
             for project in data:
                 if project['name'] in project_names:
+                    if project['parent']:
+                        project['name'] = f"{project['parent']}: {project['name']}"
                     projects.append(project)
             start += 100
             stop += 100

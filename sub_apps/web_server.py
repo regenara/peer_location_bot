@@ -19,6 +19,7 @@ from db_models.donate import Donate
 from db_models.peers import Peer
 from db_models.users import User
 from db_models.users_peers import UserPeer
+from models.peer import Cursus
 from services.keyboards import (menu_keyboard,
                                 settings_keyboard)
 from services.states import States
@@ -26,7 +27,8 @@ from misc import (dp,
                   bot)
 from utils.cache import (Cache,
                          del_cache)
-from utils.intra_api import UnknownIntraError
+from utils.intra_api import (TimeoutIntraError,
+                             UnknownIntraError)
 from utils.savers import Savers
 
 
@@ -54,9 +56,12 @@ class WebServer:
 
     @staticmethod
     async def _get_peer(peer_data: Dict[str, Any], user_id: int) -> Peer:
+        cursus_data = sorted([Cursus.from_dict(data=cursus) for cursus in peer_data['cursus_users']],
+                             key=lambda cursus: cursus.id)
+        cursus_id = cursus_data[-1].cursus_id if cursus_data else None
         campus_id = [campus['campus_id'] for campus in peer_data['campus_users'] if campus['is_primary']][0]
         return await Savers.get_peer(peer_id=peer_data['id'], login=peer_data['login'],
-                                     campus_id=campus_id, user_id=user_id)
+                                     cursus_id=cursus_id, campus_id=campus_id, user_id=user_id)
 
     async def _relationships_transfer(self, new_user_id: int, user_from_peer: User):
         if user_from_peer:
@@ -112,7 +117,7 @@ class WebServer:
                                                             code=code)
             try:
                 peer = await Config.intra.get_me(personal_access_token=personal_access_token)
-            except UnknownIntraError as e:
+            except (UnknownIntraError, TimeoutIntraError) as e:
                 self._logger.error('Failed get me | token %s | user_id %s | %s',
                                    personal_access_token, user_id, e)
                 raise web.HTTPInternalServerError

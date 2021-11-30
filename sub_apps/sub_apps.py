@@ -15,6 +15,7 @@ class SubApps:
 
     async def start(self):
         self.running.append(asyncio.create_task(self.stalking.observation()))
+        self.running.append(asyncio.create_task(self.stalking.event_notify()))
         self.running.append(asyncio.create_task(self.updater.updater()))
         self.running.append(asyncio.create_task(self.updater.clear_queue()))
 

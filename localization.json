@@ -8,8 +8,8 @@
       "en":"ru"
    },
    "help":{
-      "ru":"<b>Команды:</b>\n<code>login</code> — информация о пире\n<code>login1 login2 login3</code> — информация о пирах (не более 5)\n<code>? login</code> — список 50 последних локаций пира\n<code>! login</code> — проверки пира\n<code>& login</code> — статистика по времени\n<code>* login</code> — проекты пира\n<code># workplace</code> — пир за рабочим местом (#un-a1, # ox-d4, #er-f1, #e1z3r5p12 и т.д.)\n<code>@username</code> — поиск пира через юзернейм Телеграма. Работает, если пир зарегистрирован в боте и у него включена функция \"Отображать Телеграм\"\n<code>Друзья \uD83E\uDD1D</code> или /friends — список друзей\n<code>Места \uD83D\uDCBA</code> или /locations — список свободных мест в кампусе\n<code>Проекты \uD83D\uDCD5</code> или /projects — список пиров кампуса, сдавших тот или иной проект\n<code>Настройки \uD83D\uDEE0</code> или /start — настройки и помощь\n<code>Исходники ⚙️</code> или /about — исходники бота\n<code>Донаты \uD83D\uDCB8</code> или /donate — список пожертвований\n\n<b>Действия с пирами:</b>\n<code>login ❌</code> — пир не добавлен в друзья → добавить\n<code>login ✅</code> — пир добавлен в друзья → удалить\n<code>login \uD83D\uDD15</code> — уведомления о пире отключены → включить\n<code>login \uD83D\uDD14</code> — уведомления о пире включены → отключить\n\n<b>Статусы:</b>\n\uD83D\uDFE2 — в кампусе\n\uD83D\uDD34 — не в кампусе\n\uD83D\uDE0E — персонал\n☠️ — завершен {cursus}, но не достигнут 16 уровень\n\n<b>Настройки:</b>\n<code>Язык</code> — сменить язык\n<code>Отображать аватар</code> — показывать аватар пира\n<code>Кампус по умолчанию</code> — использовать твой кампус при поиске пиров, сдавших какой-то проект, или для поиска свободных мест\n<code>Отображать твой Телеграм</code> — показывать Телеграм-юзернейм при поиске твоего логина из Интры",
-      "en":"<b>Commands:</b>\n<code>login</code> — information about the peer\n<code>login1 login2 login3</code> — information about peers (no more than 5)\n<code>? login</code> — a list of the last 50 peer locations\n<code>! login</code> — peer evaluations\n<code>& login</code> — time statistics\n<code>* login</code> — peer projects\n<code># workplace</code> — peer at the workplace (# un-a1, # ox-d4, #er-f1, #e1z3r5p12, etc.)\n<code>@username</code> — peer search via Telegram username. Works if the peer is registered in the bot and has the \"Show Telegram\" function enabled\n<code>Friends \uD83E\uDD1D</code> or /friends - a list of friends\n<code>Locations \uD83D\uDCBA</code> or /locations - list of available places on campus\n<code>Projects \uD83D\uDCD5</code> or /projects - a list of campus peers that have passed this or that project\n<code>Settings \uD83D\uDEE0</code> or /start - settings and help\n<code>About ⚙️</code> or /about - bot sources\n<code>Donate \uD83D\uDCB8</code> or /donate - a list of donations\n\n<b>Actions with peers:</b>\n<code>login ❌</code> — peer not added as a friend → add\n<code>login ✅</code> — peer added as a friend → delete\n<code>login \uD83D\uDD15</code> — peer notifications disabled → enable\n<code>login \uD83D\uDD14</code> — peer notifications enabled → disable\n\n<b>Statuses:</b>\n\uD83D\uDFE2 — on campus\n\uD83D\uDD34 — not on campus\n\uD83D\uDE0E — staff\n☠️ — completed {cursus}, but did not reach level 16\n\n<b>Settings:</b>\n<code>Language</code> — change language\n<code>Show avatar</code> — show peer avatar\n<code>Use default campus</code> — use your campus when searching for peers who have passed a project, or to find free places\n<code>Show your Telegram</code> — show the Telegram username when searching for your login from Intra"
+      "ru":"<b>Команды:</b>\n<code>login</code> — информация о пире\n<code>login1 login2 login3</code> — информация о пирах (не более 5)\n<code>? login</code> — список 50 последних локаций пира\n<code>! login</code> — проверки пира\n<code>& login</code> — статистика по времени\n<code>* login</code> — проекты пира\n<code># workplace</code> — пир за рабочим местом (#un-a1, # ox-d4, #er-f1, #e1z3r5p12 и т.д.)\n<code>@username</code> — поиск пира через юзернейм Телеграма. Работает, если пир зарегистрирован в боте и у него включена функция \"Отображать Телеграм\"\n<code>Друзья \uD83E\uDD1D</code> или /friends — список друзей\n<code>Места \uD83D\uDCBA</code> или /locations — список свободных мест в кампусе\n<code>Проекты \uD83D\uDCD5</code> или /projects — список пиров кампуса, сдавших тот или иной проект\n<code>Мероприятия \uD83D\uDCC5</code> или /events — мероприятия\n<code>Настройки \uD83D\uDEE0</code> или /start — настройки и помощь\n<code>Исходники ⚙️</code> или /about — исходники бота\n<code>Донаты \uD83D\uDCB8</code> или /donate — список пожертвований\n\n<b>Действия с пирами:</b>\n<code>login ❌</code> — пир не добавлен в друзья → добавить\n<code>login ✅</code> — пир добавлен в друзья → удалить\n<code>login \uD83D\uDD15</code> — уведомления о пире отключены → включить\n<code>login \uD83D\uDD14</code> — уведомления о пире включены → отключить\n\n<b>Статусы:</b>\n\uD83D\uDFE2 — в кампусе\n\uD83D\uDD34 — не в кампусе\n\uD83D\uDE0E — персонал\n☠️ — завершен {cursus}, но не достигнут 16 уровень\n\n<b>Статусы проектов:</b>\n❌ — не завершен\n\uD83D\uDD75️\u200D♂️ — поиск команды\n\uD83D\uDC65 — создание команды\n\uD83D\uDCDD — в процессе\n⏳ — ожидает проверки\n✅ — завершен\n\n<b>Настройки:</b>\n<code>Язык</code> — сменить язык\n<code>Отображать аватар</code> — показывать аватар пира\n<code>Кампус по умолчанию</code> — использовать твой кампус при поиске пиров, сдавших какой-то проект, или для поиска свободных мест\n<code>Мероприятия</code> — получать уведомления о новых мероприятиях кампуса\n<code>Отображать твой Телеграм</code> — показывать Телеграм-юзернейм при поиске твоего логина из Интры",
+      "en":"<b>Commands:</b>\n<code>login</code> — information about the peer\n<code>login1 login2 login3</code> — information about peers (no more than 5)\n<code>? login</code> — a list of the last 50 peer locations\n<code>! login</code> — peer evaluations\n<code>& login</code> — time statistics\n<code>* login</code> — peer projects\n<code># workplace</code> — peer at the workplace (# un-a1, # ox-d4, #er-f1, #e1z3r5p12, etc.)\n<code>@username</code> — peer search via Telegram username. Works if the peer is registered in the bot and has the \"Show Telegram\" function enabled\n<code>Friends \uD83E\uDD1D</code> or /friends - a list of friends\n<code>Locations \uD83D\uDCBA</code> or /locations - list of available places on campus\n<code>Projects \uD83D\uDCD5</code> or /projects - a list of campus peers that have passed this or that project\n<code>Events \uD83D\uDCC5</code> or /events — Events\n<code>Settings \uD83D\uDEE0</code> or /start - settings and help\n<code>About ⚙️</code> or /about - bot sources\n<code>Donate \uD83D\uDCB8</code> or /donate - a list of donations\n\n<b>Actions with peers:</b>\n<code>login ❌</code> — peer not added as a friend → add\n<code>login ✅</code> — peer added as a friend → delete\n<code>login \uD83D\uDD15</code> — peer notifications disabled → enable\n<code>login \uD83D\uDD14</code> — peer notifications enabled → disable\n\n<b>Statuses:</b>\n\uD83D\uDFE2 — on campus\n\uD83D\uDD34 — not on campus\n\uD83D\uDE0E — staff\n☠️ — completed {cursus}, but did not reach level 16\n\n<b>Project statuses:</b>\n❌ — not completed\n\uD83D\uDD75️\u200D♂️ — team search\n\uD83D\uDC65 — creating a team\n\uD83D\uDCDD — in progress\n⏳ — pending verification\n✅ — completed\n\n<b>Settings:</b>\n<code>Language</code> — change language\n<code>Show avatar</code> — show peer avatar\n<code>Use default campus</code> — use your campus when searching for peers who have passed a project, or to find free places\n<code>Events</code> — receive notifications of new campus events\n<code>Show your Telegram</code> — show the Telegram username when searching for your login from Intra"
    },
    "not_found":{
       "ru":"Пир <b>{login}</b> не найден! Проверь правильность введенных данных",
@@ -69,6 +69,10 @@
       "ru":"{title}Пир еще не заходил в систему",
       "en":"{title}The peer has not logged in yet"
    },
+   "not_projects":{
+      "ru":"{title}Пир еще не работал над проектами",
+      "en":"{title}Peer hasn't worked on projects yet"
+   },
    "free_locations":{
       "ru":{
          "title":"\uD83C\uDFEB <b>{campus_name}</b>\n<i>Информация актуальна на {now} (указано местное время кампуса)</i>\n<b>Мест занято</b>: {active}\n{body}",
@@ -93,7 +97,7 @@
          "cursus":"Choose a course:",
          "choose":"Choose a project:",
          "choose_campus":"Choose a campus:",
-         "title":"\uD83D\uDC64 <b>{campus_name}</b> campus peers who passed the project {project_name} in the last {weeks} weeks (local campus time)\n",
+         "title":"\uD83D\uDC64 <b>{campus_name}</b> campus peers who passed the project {project_name} in the last {weeks} weeks (local campus time):\n",
          "not_found":"No one from <b>{campus_name}</b> campus has passed project <b>{project_name}</b> in the last {weeks} weeks."
       }
    },
@@ -155,11 +159,28 @@
          "not_closed":"The project is not closed yet"
       }
    },
+   "events":{
+      "ru":{
+         "title":"\uD83D\uDCC5 Мероприятия кампуса <b>{campus_name}</b> (указано местное время кампуса):\n",
+         "location":"Место",
+         "registered":"Зарегистрировано",
+         "no_events":"Никаких мероприятий в кампусе <b>{campus_name}</b> не запланировано",
+         "new_event":"\uD83D\uDCC5 Новое мероприятие\n"
+      },
+      "en":{
+         "title":"\uD83D\uDCC5 <b>{campus_name}</b> campus events (local campus time):\n",
+         "location":"Location",
+         "registered":"Registered",
+         "no_events":"No events scheduled on the <b>{campus_name}</b> campus",
+         "new_event":"\uD83D\uDCC5 New events\n"
+      }
+   },
    "menu":{
       "ru":{
          "friends":"Друзья \uD83E\uDD1D",
          "locations":"Места \uD83D\uDCBA",
          "projects":"Проекты \uD83D\uDCD5",
+         "events":"Мероприятия \uD83D\uDCC5",
          "settings":"Настройки \uD83D\uDEE0",
          "about":"Исходники ⚙",
          "donate":"Донаты \uD83D\uDCB8"
@@ -168,6 +189,7 @@
          "friends":"Friends \uD83E\uDD1D",
          "locations":"Locations \uD83D\uDCBA",
          "projects":"Projects \uD83D\uDCD5",
+         "events":"Events \uD83D\uDCC5",
          "settings":"Settings \uD83D\uDEE0",
          "about":"About ⚙",
          "donate":"Donate \uD83D\uDCB8"
@@ -178,12 +200,14 @@
          "language":"\uD83C\uDDF7\uD83C\uDDFA  Язык",
          "show_avatar":"{status}  Отображать аватар",
          "show_telegram":"{status}  Отображать твой Телеграм",
+         "notify":"{status}  Мероприятия",
          "default_campus":"{status}  Кампус по умолчанию"
       },
       "en":{
          "language":"\uD83C\uDDEC\uD83C\uDDE7  Language",
          "show_avatar":"{status}  Show avatar",
          "show_telegram":"{status}  Show your Telegram",
+         "notify":"{status}  Events",
          "default_campus":"{status}  Use default campus"
       }
    },

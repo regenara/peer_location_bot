@@ -33,6 +33,7 @@ class Localization:
     not_found_username = Languages()
     now = Languages()
     not_logged = Languages()
+    not_projects = Languages()
 
     coalition = Languages()
     campus = Languages()
@@ -82,6 +83,7 @@ class Localization:
     friends = Languages()
     locations = Languages()
     projects = Languages()
+    events = Languages()
     settings = Languages()
     help = Languages()
     about = Languages()
@@ -92,6 +94,7 @@ class Localization:
     language = Languages()
     avatar = Languages()
     anon = Languages()
+    notify = Languages()
     default_campus = Languages()
 
     alone_peer_menu = Languages()
@@ -105,6 +108,12 @@ class Localization:
     donate_text_title = Languages()
     donate_text_tops = Languages()
     donate_link = Languages()
+
+    events_title = Languages()
+    event_location = Languages()
+    event_registered = Languages()
+    no_events = Languages()
+    new_event = Languages()
 
     def load(self, data: dict):
         self.hello.ru = data['hello']['ru']
@@ -130,6 +139,8 @@ class Localization:
         self.now.en = data['now']['en']
         self.not_logged.ru = data['not_logged']['ru']
         self.not_logged.en = data['not_logged']['en']
+        self.not_projects.ru = data['not_projects']['ru']
+        self.not_projects.en = data['not_projects']['en']
 
         self.coalition.ru = data['user_info']['ru']['coalition']
         self.coalition.en = data['user_info']['en']['coalition']
@@ -219,6 +230,8 @@ class Localization:
         self.locations.en = data['menu']['en']['locations']
         self.projects.ru = data['menu']['ru']['projects']
         self.projects.en = data['menu']['en']['projects']
+        self.events.ru = data['menu']['ru']['events']
+        self.events.en = data['menu']['en']['events']
         self.settings.ru = data['menu']['ru']['settings']
         self.settings.en = data['menu']['en']['settings']
         self.about.ru = data['menu']['ru']['about']
@@ -236,6 +249,8 @@ class Localization:
         self.avatar.en = data['settings_menu']['en']['show_avatar']
         self.anon.ru = data['settings_menu']['ru']['show_telegram']
         self.anon.en = data['settings_menu']['en']['show_telegram']
+        self.notify.ru = data['settings_menu']['ru']['notify']
+        self.notify.en = data['settings_menu']['en']['notify']
         self.default_campus.ru = data['settings_menu']['ru']['default_campus']
         self.default_campus.en = data['settings_menu']['en']['default_campus']
 
@@ -259,3 +274,13 @@ class Localization:
         self.donate_link.ru = data['donate_text']['ru']['donate_link']
         self.donate_link.en = data['donate_text']['en']['donate_link']
 
+        self.events_title.ru = data['events']['ru']['title']
+        self.events_title.en = data['events']['en']['title']
+        self.event_location.ru = data['events']['ru']['location']
+        self.event_location.en = data['events']['en']['location']
+        self.event_registered.ru = data['events']['ru']['registered']
+        self.event_registered.en = data['events']['en']['registered']
+        self.no_events.ru = data['events']['ru']['no_events']
+        self.no_events.en = data['events']['en']['no_events']
+        self.new_event.ru = data['events']['ru']['new_event']
+        self.new_event.en = data['events']['en']['new_event']

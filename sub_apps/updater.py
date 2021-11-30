@@ -12,6 +12,7 @@ from services.states import States
 from utils.cache import Cache
 from utils.intra_api import (IntraAPI,
                              NotFoundIntraError,
+                             TimeoutIntraError,
                              UnknownIntraError)
 
 
@@ -26,7 +27,7 @@ class Updater:
         campuses_db = await Campus.get_campuses()
         try:
             campuses = await self._intra.get_campuses()
-        except UnknownIntraError as e:
+        except (UnknownIntraError, TimeoutIntraError) as e:
             self._logger.error('Get campuses error %s', e)
             return
         if len(campuses_db) < len(campuses):
@@ -38,7 +39,7 @@ class Updater:
                     await Campus.create_campus(campus_id=campus_id, name=campus['name'],
                                                time_zone=campus['time_zone'])
                     self._logger.info('Save campus %s in db', campus['name'])
-                except (NotFoundIntraError, UnknownIntraError) as e:
+                except (NotFoundIntraError, UnknownIntraError, TimeoutIntraError) as e:
                     self._logger.error('Get campus error | %s | %s', campus_id, e)
         self._logger.info('Completed campuses updater')
 
