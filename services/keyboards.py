@@ -160,5 +160,5 @@ def keyboard_normalize(friends: List[PeerDB], observables: List[PeerDB],
         keyboard.row(*pagination_buttons)
     elif payload == 'alone_peer':
         alone_peer_buttons = buttons[1:]
-        [keyboard.row(button[0]) for button in alone_peer_buttons]
+        [keyboard.row(*buttons) for buttons in alone_peer_buttons]
     return keyboard
