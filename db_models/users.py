@@ -22,7 +22,7 @@ class Languages(Enum):
 class User(db.Model, TimeMixin):
     __tablename__ = 'users'
 
-    id = db.Column(db.Integer(), primary_key=True)
+    id = db.Column(db.BigInteger(), primary_key=True)
     username = db.Column(db.String(50), nullable=True)
     show_avatar = db.Column(db.Boolean(), nullable=False, server_default=expression.false())
     show_me = db.Column(db.Boolean(), nullable=False, server_default=expression.false())

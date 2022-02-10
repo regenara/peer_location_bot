@@ -7,4 +7,4 @@ cryptography==3.4.8
 gino==1.0.1
 lxml>=4.6.5
 msgpack==1.0.2
-ujson==4.1.0
+ujson>=5.1.0
