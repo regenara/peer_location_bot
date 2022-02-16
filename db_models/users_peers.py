@@ -18,7 +18,7 @@ class UserPeer(db.Model):
     __tablename__ = 'users_peers'
 
     id = db.Column(db.Integer(), primary_key=True)
-    user_id = db.Column(db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.BigInteger, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     peer_id = db.Column(db.ForeignKey('peers.id', ondelete='CASCADE'), nullable=False)
     relationship = db.Column(db.Enum(Relationship), nullable=False)
 

@@ -166,4 +166,4 @@ async def peers_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
         await message.delete()
     await bot.send_message(user.id, '\n\n'.join(texts), reply_markup=keyboard,
-                           disable_web_page_preview=user.show_avatar and len(peers) != 1)
+                           disable_web_page_preview=len(peers) > 1 or not user.show_avatar)
