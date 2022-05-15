@@ -43,7 +43,8 @@ class Project:
             'in_progress': '📝',
             'waiting_for_correction': '⏳',
             'searching_a_group': '🕵️‍♂️',
-            'creating_group': '👥'
+            'creating_group': '👥',
+            'waiting_to_start': '⏯'
         }
         for project in projects_data:
             if not project.cursus_ids:
