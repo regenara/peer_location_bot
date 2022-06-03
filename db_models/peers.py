@@ -10,7 +10,7 @@ class Peer(db.Model, TimeMixin):
     id = db.Column(db.Integer(), primary_key=True)
     login = db.Column(db.String(50), nullable=False, unique=True)
     campus_id = db.Column(db.ForeignKey('campuses.id', ondelete='SET NULL'), nullable=True)
-    user_id = db.Column(db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    user_id = db.Column(db.BigInteger, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     cursus_id = db.Column(db.Integer(), nullable=True)
 
     def __repr__(self):
