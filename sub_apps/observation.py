@@ -85,13 +85,16 @@ class Observation:
                     triggers = (current_location != 'not on campus',
                                 location is not None,
                                 location != current_location)
+                    left_triggers = (current_location == 'not on campus',
+                                     location != 'not on campus',
+                                     location is not None)
                     if triggers[-1]:
                         self._logger.info('Update location | %s | %s → %s', login, location, current_location)
                         await Cache().set(key=f'Location:{login}', value=current_location)
                     if all(triggers):
                         await self._mailing_observations(user_ids=user_ids, login=login,
                                                          location=current_location)
-                    elif current_location == 'not on campus' and location != 'not on campus':
+                    elif all(left_triggers):
                         await self._mailing_observations(user_ids=user_ids, login=login,
                                                          location=location, left_peer=True)
 
