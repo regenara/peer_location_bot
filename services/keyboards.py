@@ -45,10 +45,10 @@ def menu_keyboard(language: str) -> ReplyKeyboardMarkup:
 def settings_keyboard(user: User) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(row_width=2)
     statuses = {True: ('✅', 'no'), False: ('❌', 'yes')}
-    texts = (Config.local.avatar.get, Config.local.default_campus.get,
-             Config.local.notify.get, Config.local.anon.get)
-    callbacks = ('avatar', 'campus', 'notify', 'telegram')
-    settings = (user.show_avatar, user.use_default_campus, user.notify, user.show_me)
+    texts = (Config.local.avatar.get, Config.local.default_campus.get, Config.local.notify.get,
+             Config.local.peer_left.get, Config.local.anon.get)
+    callbacks = ('avatar', 'campus', 'notify', 'left_peer', 'telegram')
+    settings = (user.show_avatar, user.use_default_campus, user.notify, user.left_peer, user.show_me)
     buttons = [InlineKeyboardButton(Config.local.language.get(user.language),
                                     callback_data=Config.local.languages.get(user.language))]
     for text, callback, setting in zip(texts, callbacks, settings):

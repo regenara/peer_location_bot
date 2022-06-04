@@ -28,6 +28,7 @@ class Localization:
     help_text = Languages()
     wait = Languages()
     in_campus = Languages()
+    left_workplace = Languages()
     antiflood = Languages()
     not_found = Languages()
     not_found_username = Languages()
@@ -96,6 +97,7 @@ class Localization:
     anon = Languages()
     notify = Languages()
     default_campus = Languages()
+    peer_left = Languages()
 
     alone_peer_menu = Languages()
 
@@ -129,6 +131,8 @@ class Localization:
         self.wait.en = data['wait']['en']
         self.in_campus.ru = data['in_campus']['ru']
         self.in_campus.en = data['in_campus']['en']
+        self.left_workplace.ru = data['left_workplace']['ru']
+        self.left_workplace.en = data['left_workplace']['en']
         self.antiflood.ru = data['antiflood']['ru']
         self.antiflood.en = data['antiflood']['en']
         self.not_found.ru = data['not_found']['ru']
@@ -253,6 +257,8 @@ class Localization:
         self.notify.en = data['settings_menu']['en']['notify']
         self.default_campus.ru = data['settings_menu']['ru']['default_campus']
         self.default_campus.en = data['settings_menu']['en']['default_campus']
+        self.peer_left.ru = data['settings_menu']['ru']['peer_left']
+        self.peer_left.en = data['settings_menu']['en']['peer_left']
 
         self.alone_peer_menu.ru = data['alone_peer_menu']['ru']
         self.alone_peer_menu.en = data['alone_peer_menu']['en']

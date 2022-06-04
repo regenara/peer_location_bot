@@ -45,14 +45,16 @@ class Observation:
         ).limit(limit).offset(offset).order_by(Peer.campus_id, Peer.cursus_id)
         return await query.group_by(Peer.campus_id, Peer.cursus_id, Campus.time_zone).gino.first()
 
-    async def _mailing_observations(self, user_ids: List[int], login: str, current_location: str):
+    async def _mailing_observations(self, user_ids: List[int], login: str, location: str, left_peer: bool = False):
         for user_id in user_ids:
             self._logger.info('Trying to send notification | %s | %s', login, user_id)
             user_data = await User.get_user_data(user_id=user_id)
             if user_data:
                 _, peer, user = user_data
-                text = self._local.in_campus.get(user.language, login=login,
-                                                 current_location=current_location)
+                if left_peer and user.left_peer:
+                    text = self._local.left_workplace.get(user.language, login=login, old_location=location)
+                    await self._mailing(message=text, user=user, peer_id=peer.id)
+                text = self._local.in_campus.get(user.language, login=login, current_location=location)
                 await self._mailing(message=text, user=user, peer_id=peer.id)
             else:
                 self._logger.error('User not found | %s', user_id)
@@ -88,7 +90,11 @@ class Observation:
                         await Cache().set(key=f'Location:{login}', value=current_location)
                     if all(triggers):
                         await self._mailing_observations(user_ids=user_ids, login=login,
-                                                         current_location=current_location)
+                                                         location=current_location)
+                    elif current_location == 'not on campus' and location != 'not on campus':
+                        await self._mailing_observations(user_ids=user_ids, login=login,
+                                                         location=location, left_peer=True)
+
                     self._logger.info('Complete observation process | %s', login)
 
             except Exception as e:

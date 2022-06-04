@@ -28,6 +28,7 @@ class User(db.Model, TimeMixin):
     show_me = db.Column(db.Boolean(), nullable=False, server_default=expression.false())
     use_default_campus = db.Column(db.Boolean(), nullable=False, server_default=expression.true())
     notify = db.Column(db.Boolean(), nullable=False, server_default=expression.true())
+    left_peer = db.Column(db.Boolean(), nullable=False, server_default=expression.true())
     language = db.Column(db.Enum(Languages), nullable=False, server_default=Languages.en.name)
 
     def __repr__(self):
@@ -41,6 +42,7 @@ class User(db.Model, TimeMixin):
             'show_me': self.show_me,
             'use_default_campus': self.use_default_campus,
             'notify': self.notify,
+            'left_peer': self.left_peer,
             'language': self.language.value if hasattr(self.language, 'value') else self.language
         }
 

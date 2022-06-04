@@ -82,6 +82,12 @@ async def campus_settings(callback_query: CallbackQuery):
     await action_settings(callback_query=callback_query, use_default_campus=use_default_campus)
 
 
+@dp.callback_query_handler(text=['yes_left_peer', 'no_left_peer'], state='granted')
+async def peer_left_settings(callback_query: CallbackQuery):
+    left_peer = callback_query.data == 'yes_left_peer'
+    await action_settings(callback_query=callback_query, left_peer=left_peer)
+
+
 @dp.callback_query_handler(text=['yes_notify', 'no_notify'], state='granted')
 async def notify_settings(callback_query: CallbackQuery):
     notify = callback_query.data == 'yes_notify'
