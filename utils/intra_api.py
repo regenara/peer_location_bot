@@ -79,7 +79,7 @@ class IntraAPI:
         self._apps.rotate(int(not personal_access_token))
         async with self._throttler:
             attempts = 1
-            while attempts != 11:
+            while attempts < 10:
                 app = self._apps[0]
                 access_token = personal_access_token or app['access_token']
                 params = {**params, 'access_token': access_token}
@@ -121,12 +121,13 @@ class IntraAPI:
                         attempts += 1
                         self._apps.rotate(1)
 
-                    self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
-                                       attempts - 1, response.reason, response.status, url, access_token)
-                    raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
                 except asyncio.exceptions.TimeoutError:
                     self._logger.error('Request=%s | %s | raise TimeoutIntraError', attempts, url)
                     raise TimeoutIntraError(f'Intra does not respond for more than 60 seconds')
+
+            self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
+                               attempts, response.reason, response.status, url, access_token)
+            raise UnknownIntraError(f'Intra response: {response.reason} [{response.status}]')
 
     async def load(self):
         applications = await Application.get_all() if not self._config.test else [await Application.get_test()]
