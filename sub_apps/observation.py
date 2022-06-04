@@ -54,8 +54,9 @@ class Observation:
                 if left_peer and user.left_peer:
                     text = self._local.left_workplace.get(user.language, login=login, old_location=location)
                     await self._mailing(message=text, user=user, peer_id=peer.id)
-                text = self._local.in_campus.get(user.language, login=login, current_location=location)
-                await self._mailing(message=text, user=user, peer_id=peer.id)
+                else:
+                    text = self._local.in_campus.get(user.language, login=login, current_location=location)
+                    await self._mailing(message=text, user=user, peer_id=peer.id)
             else:
                 self._logger.error('User not found | %s', user_id)
 
