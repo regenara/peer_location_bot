@@ -44,7 +44,8 @@ class Project:
             'waiting_for_correction': '⏳',
             'searching_a_group': '🕵️‍♂️',
             'creating_group': '👥',
-            'waiting_to_start': '⏯'
+            'waiting_to_start': '⏯',
+            'parent': '👩‍👦'
         }
         for project in projects_data:
             if not project.cursus_ids:
@@ -54,7 +55,7 @@ class Project:
                 cursus = courses.get(cursus_id)
                 if cursus:
                     break
-            project.status = statuses[project.status]
+            project.status = statuses.get(project.status) or '❓'
             if project.validated:
                 project.status = '✅'
             project.children.extend(children.get(project.id, []))
