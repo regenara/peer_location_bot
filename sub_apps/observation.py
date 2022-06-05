@@ -151,8 +151,8 @@ class Observation:
                 observables = await self._get_observables(limit=100, offset=offset)
             self._logger.info('Completed observation')
             passed_seconds = (datetime.now() - now).seconds
-            if passed_seconds < 600:
-                sleep = 600 - passed_seconds
+            if passed_seconds < 300:
+                sleep = 300 - passed_seconds
                 self._logger.info('Sleep %s seconds after observation', sleep)
                 await asyncio.sleep(sleep)
 
