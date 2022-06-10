@@ -87,6 +87,7 @@ class IntraAPI:
                     async with self.session.request('GET', url, params=params) as response:
 
                         if response.status == 200:
+
                             try:
                                 json_response = await response.json()
                                 self._logger.info('Request=%s %s [%s] | %s | %s | completed',
@@ -124,6 +125,10 @@ class IntraAPI:
                 except asyncio.exceptions.TimeoutError:
                     self._logger.error('Request=%s | %s | raise TimeoutIntraError', attempts, url)
                     raise TimeoutIntraError(f'Intra does not respond for more than 60 seconds')
+
+                except TypeError as e:
+                    self._logger.error('Request=%s | %s | %s | TypeError, raise UnknownIntraError', attempts, url, e)
+                    raise UnknownIntraError('Something went wrong, please try again')
 
             self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
                                attempts, response.reason, response.status, url, access_token)
