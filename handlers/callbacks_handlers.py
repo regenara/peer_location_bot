@@ -36,10 +36,10 @@ async def action_peer(user: User, callback_query: CallbackQuery, method: Callabl
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
     login = callback_query.data.split('.')[-1]
     with suppress(MessageNotModified, MessageToEditNotFound):
-        message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
-    await bot.send_chat_action(user.id, 'typing')
-    return await get_text_and_keyboard(user=user, message=message, method=method, login=login, action=action,
-                                       limit=limit, stop=stop)
+        await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    await callback_query.message.bot.send_chat_action(user.id, 'typing')
+    return await get_text_and_keyboard(user=user, message=callback_query.message, method=method, login=login,
+                                       action=action, limit=limit, stop=stop)
 
 
 async def action_peers(user: User, callback_query: CallbackQuery, current_count: int, trigger: str,
@@ -154,12 +154,12 @@ async def campus_locations(callback_query: CallbackQuery, user_data: Tuple[Campu
     *_, user = user_data
     campus_id = int(callback_query.data.split('.')[2])
     with suppress(MessageNotModified, MessageToEditNotFound):
-        message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
+        await callback_query.message.edit_text(Config.local.wait.get(user.language))
     text, count, _ = await text_compile.free_locations_compile(user=user, campus_id=campus_id)
     keyboard = pagination_keyboard(action='locations_pagination', count=count, content=campus_id, limit=40, stop=9)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
-        await message.delete()
+        await callback_query.message.delete()
     await bot.send_message(user.id, text, reply_markup=keyboard)
 
 
@@ -256,8 +256,8 @@ async def back_to_peer(callback_query: CallbackQuery, user_data: Tuple[Campus, P
     await dp.current_state(user=user.id).set_state(States.THROTTLER)
     login = callback_query.data.split('.')[-1]
     with suppress(MessageNotModified, MessageToEditNotFound):
-        message = await callback_query.message.edit_text(Config.local.wait.get(user.language))
-    await message.bot.send_chat_action(user.id, 'typing')
+        await callback_query.message.edit_text(Config.local.wait.get(user.language))
+    await callback_query.message.bot.send_chat_action(user.id, 'typing')
     peer, text = await text_compile.peer_data_compile(user=user, login=login, is_single=True)
     friends = await UserPeer.get_friends(user_id=user.id)
     observables = await UserPeer.get_observables(user_id=user.id)
@@ -265,7 +265,7 @@ async def back_to_peer(callback_query: CallbackQuery, user_data: Tuple[Campus, P
     keyboard = alone_peer_keyboard(user=user, login=peer.login, keyboard=keyboard)
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     with suppress(MessageToDeleteNotFound, MessageCantBeDeleted):
-        await message.delete()
+        await callback_query.message.delete()
     await bot.send_message(user.id, text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
 
 
