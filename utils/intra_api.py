@@ -82,7 +82,7 @@ class IntraAPI:
             while attempts < 10:
                 app = self._apps[0]
                 access_token = personal_access_token or app['access_token']
-                params = {**params, 'access_token': access_token}
+                params = {**params, 'access_token': str(access_token)}
                 try:
                     async with self.session.request('GET', url, params=params) as response:
 
@@ -125,10 +125,6 @@ class IntraAPI:
                 except asyncio.exceptions.TimeoutError:
                     self._logger.error('Request=%s | %s | raise TimeoutIntraError', attempts, url)
                     raise TimeoutIntraError(f'Intra does not respond for more than 60 seconds')
-
-                except TypeError as e:
-                    self._logger.error('Request=%s | %s | %s | TypeError, raise UnknownIntraError', attempts, url, e)
-                    raise UnknownIntraError('Something went wrong, please try again')
 
             self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
                                attempts, response.reason, response.status, url, access_token)
