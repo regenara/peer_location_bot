@@ -87,7 +87,10 @@ class IntraAPI:
                 params = {**params, 'access_token': str(access_token)}
                 try:
                     async with self.session.request('GET', url, params=params) as response:
-
+                        if access_token is None and endpoint != 'me':
+                            self._apps[0]['access_token'] = await self._get_token(application_id=app['id'],
+                                                                                  client_id=app['client_id'],
+                                                                                  client_secret=app['client_secret'])
                         if response.status == 200:
 
                             try:
