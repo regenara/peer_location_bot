@@ -2,6 +2,7 @@ import asyncio
 import logging
 import ssl
 from collections import deque
+from contextlib import suppress
 from datetime import (datetime,
                       timedelta)
 from typing import (Any,
@@ -57,10 +58,11 @@ class IntraAPI:
         self._throttler = Throttler(rate_limit=20)
 
     async def _request_token(self, params: Dict[str, str]) -> str:
-        async with self.session.request('POST', self._auth_url, params=params) as response:
-            if response.status == 200:
-                js = await response.json()
-                return js['access_token']
+        with suppress(asyncio.exceptions.TimeoutError):
+            async with self.session.request('POST', self._auth_url, params=params) as response:
+                if response.status == 200:
+                    js = await response.json()
+                    return js['access_token']
 
     async def _get_token(self, application_id: int, client_id: str, client_secret: str) -> str:
         params = {
@@ -125,10 +127,6 @@ class IntraAPI:
                 except asyncio.exceptions.TimeoutError:
                     self._logger.error('Request=%s | %s | raise TimeoutIntraError', attempts, url)
                     raise TimeoutIntraError(f'Intra does not respond for more than 60 seconds')
-
-                except TypeError as e:
-                    self._logger.error('Request=%s | %s | %s | TypeError, raise UnknownIntraError', attempts, url, e)
-                    raise UnknownIntraError('Something went wrong, please try again')
 
             self._logger.error('Request=%s %s [%s] | %s | %s | raise UnknownIntraError',
                                attempts, response.reason, response.status, url, access_token)
