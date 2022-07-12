@@ -72,8 +72,9 @@ async def friend_data(message: Message, user_data: Tuple[Campus, Peer, User]):
     else:
         observables = await UserPeer.get_observables(user_id=user.id)
         peer, text = await text_compile.peer_data_compile(user=user, login=friends[0].login, is_single=True)
-        keyboard = peer_keyboard(peers=[peer], friends=friends, observables=observables, payload='alone_peer')
-        keyboard = alone_peer_keyboard(user=user, login=peer.login, keyboard=keyboard)
+        keyboard = peer_keyboard(peers=[peer or friends[0]], friends=friends,
+                                 observables=observables, payload='alone_peer')
+        keyboard = alone_peer_keyboard(user=user, login=friends[0].login, keyboard=keyboard)
         text = '\n\n'.join((Config.local.friends_list.get(user.language, from_=1, to=1, friends_count=1), text))
     await dp.current_state(user=user.id).set_state(States.GRANTED)
     await message.answer(text, reply_markup=keyboard, disable_web_page_preview=not user.show_avatar)
