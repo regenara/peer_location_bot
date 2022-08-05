@@ -33,7 +33,8 @@ for custom_filter in (IsIntrovert,
 
 async def on_startup(app):
     await Config.start()
-    await Config.sub_apps.start()
+    if not Config.test:
+        await Config.sub_apps.start()
     webhook = await bot.get_webhook_info()
     webhook_url = urljoin(Config.bot_base_url, Config.webhook_bot_path)
     if webhook.url != webhook_url:
@@ -46,7 +47,8 @@ async def on_shutdown(app):
     await bot.delete_webhook()
     await dp.storage.close()
     await dp.storage.wait_closed()
-    await Config.sub_apps.stop()
+    if not Config.test:
+        await Config.sub_apps.stop()
     await Config.stop()
 
 

@@ -55,7 +55,7 @@ class IntraAPI:
         connector = TCPConnector(ssl=ssl_context)
         timeout: ClientTimeout = ClientTimeout(total=60)
         self.session: ClientSession = ClientSession(connector=connector, json_serialize=ujson.dumps, timeout=timeout)
-        self._throttler = Throttler(rate_limit=20)
+        self._throttler = Throttler(rate_limit=20 if not self._config.test else 2)
 
     async def _request_token(self, params: Dict[str, str]) -> str:
         with suppress(asyncio.exceptions.TimeoutError):
